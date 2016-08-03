@@ -20,7 +20,7 @@
 #define __CCUrl_H__
 
 #include <curl/curl.h>
-#include <curl/types.h>
+///#include <curl/types.h>
 #include <curl/easy.h>
 
 #include <string.h>

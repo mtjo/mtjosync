@@ -1,7 +1,7 @@
 BUILDDIR := ./build/
-BINARY = $(BUILDDIR)sample
+BINARY = $(BUILDDIR)sync
 
-all : dir sample package
+all : dir sync package
 
 ROOTDIR = $(CURDIR)/../
 toolchain := $(ROOTDIR)toolchain/
@@ -16,13 +16,13 @@ LDFLAGS = -Wall -O2 -lxmrouter -lthrift -lssl -lcrypto -lconfig++ -ljson-c \
 dir : 
 	mkdir -p $(BUILDDIR)
 
-sample :
+sync :
 	$(CXX) $(CXXFLAGS) Notifier.cpp $(LIB_DIR) $(LDFLAGS) -o $(BINARY)   
 	
 clean:
 	rm -r build
 
-.PHONY : clean sample
+.PHONY : clean sync
 
 package: 
 	cp start_script build/
