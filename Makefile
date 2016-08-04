@@ -17,7 +17,7 @@ dir :
 	mkdir -p $(BUILDDIR)
 
 sync :
-	$(CXX) $(CXXFLAGS) Notifier.cpp $(LIB_DIR) $(LDFLAGS) -o $(BINARY)   
+	$(CXX) $(CXXFLAGS) sync.cpp $(LIB_DIR) $(LDFLAGS) -o $(BINARY)   
 	
 clean:
 	rm -r build

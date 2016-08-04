@@ -6,24 +6,6 @@
 #include <curl/curl.h>
 #define POSTURL "https://pcs.baidu.com/rest/2.0/pcs/file?method=upload&access_token=21.e8d354bb2fd2c7d341d2db6685857963.2592000.1472779881.2738093065-2339858&path=/apps/mtjo"
 
-CURLcode getUrl(char *url)
-{
-    CURL *curl;
-    CURLcode res;
-
-    curl = curl_easy_init();    // 初始化
-    if (curl)
-    {
-        curl_easy_setopt(curl, CURLOPT_URL,url);
-        //curl_easy_setopt(curl, CURLOPT_WRITEDATA, res); //将返回的http头输出到fp指向的文件
-        //curl_easy_setopt(curl, CURLOPT_HEADERDATA, res); //将返回的html主体数据输出到fp指向的文件
-        res = curl_easy_perform(curl);   // 执行
-        if (res != 0) {
-           curl_easy_cleanup(curl);
-           return res;
-        }
-    }
-}
 
 
 int pcs_upload_file(char *postUrl,char *filePath, bool noexpectheader=true)
@@ -39,11 +21,11 @@ int pcs_upload_file(char *postUrl,char *filePath, bool noexpectheader=true)
   curl_global_init(CURL_GLOBAL_ALL);
  
   /* Fill in the file upload field */ 
-  curl_formadd(&formpost,
+  /*curl_formadd(&formpost,
                &lastptr,
                CURLFORM_COPYNAME, "message",
                CURLFORM_COPYCONTENTS, "hello",
-               CURLFORM_END);
+               CURLFORM_END);*/
  
   /* Fill in the filename field */ 
   curl_formadd(&formpost,
@@ -129,21 +111,17 @@ int readFileList(char *basePath)
 
 int main(void)
 {
-    char tmpurl[1000];
-strcpy(tmpurl,"https://pcs.baidu.com/rest/2.0/pcs/file?method=list&access_token=21.e8d354bb2fd2c7d341d2db6685857963.2592000.1472779881.2738093065-2339858&path=/apps/mtjo");
-  CURLcode res = getUrl(tmpurl);
-
     DIR *dir;
     char basePath[1000];
 
     ///get the current absoulte path
     memset(basePath,'\0',sizeof(basePath));
     getcwd(basePath, 999);
-   // printf("the current dir is : %s\n",basePath);
+    printf("the current dir is : %s\n",basePath);
 
     ///get the file list
     memset(basePath,'\0',sizeof(basePath));
     strcpy(basePath,"sync");
-    //readFileList(basePath);
+    readFileList(basePath);
     return 0;
 }
