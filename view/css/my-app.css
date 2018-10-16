@@ -331,6 +331,7 @@ body {
 }
 .toast-msg{
     background-color: rgba(0,0,0,0.5);
+    display: inline-block;
     padding: 20px;
     border-radius: 10px;
 }

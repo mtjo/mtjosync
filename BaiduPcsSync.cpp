@@ -242,4 +242,4 @@ void BaiduPcsSync::stopFrpc() {
 }
 
 
-BaiduPcsSync frp;
+BaiduPcsSync baiduPcsSync;
