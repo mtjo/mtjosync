@@ -57,7 +57,7 @@ class Sync {
 		return $response_r;
 	}
 	public function bindaccount() {
-		$location = 'https://openapi.baidu.com/oauth/2.0/authorize?response_type=code&' . 'client_id=' . $this->ApiKey . '&redirect_uri=' . $this->redirect_uri . '&scope=basic,netdisk' . '&display=dialog';
+		$location = 'https://openapi.baidu.com/oauth/2.0/authorize?response_type=code&' . 'client_id=' . $this->ApiKey . '&redirect_uri=' . $this->redirect_uri . '&scope=basic,netdisk' . '&display=mobile';
 		header ( 'Location:' . $location, true, 302 );
 	}
 	public function getPcsToken($code) {

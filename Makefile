@@ -1,5 +1,5 @@
 BUILDDIR := ./build/
-BINARY = $(BUILDDIR)sync
+BINARY = $(BUILDDIR)BaiduPcsSync
 
 all : dir sync package
 
@@ -10,14 +10,14 @@ CC =$(toolchain)/bin/arm-xiaomi-linux-uclibcgnueabi-gcc
 LIB_DIR = -L$(ROOTDIR)/lib/
 CXXFLAGS += -I$(ROOTDIR)/include/
 LDFLAGS = -Wall -O2 -lxmrouter -lthrift -lssl -lcrypto -lconfig++ -ljson-c \
- -lboost_system -lboost_filesystem -lthriftnb -levent -lcurl -lz -lboost_thread \
- -lroutermain
+           -lboost_system -lboost_filesystem -lthriftnb -levent -lcurl -lz -lboost_thread \
+           -lroutermain -std=c++11
 
 dir : 
 	mkdir -p $(BUILDDIR)
 
 sync :
-	$(CXX) $(CXXFLAGS) sync.cpp $(LIB_DIR) $(LDFLAGS) -o $(BINARY)   
+	$(CXX) $(CXXFLAGS)  JSON.cpp inifile.c BaiduPcsSync.cpp $(LIB_DIR) $(LDFLAGS) -o $(BINARY)
 	
 clean:
 	rm -r build

@@ -1,1 +1,1 @@
-RUN ./sync
+RUN ./BaiduPcsSync

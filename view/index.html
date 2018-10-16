@@ -495,6 +495,79 @@
         });
 
 
+
+        routerRequest.request({
+            path: "/api-third-party/service/datacenter/config_info",
+            type: "GET",
+            data: {
+                appId: appId,
+                key: "pcs_token"
+            },
+            success: function (data) {
+                alert(data)
+                var response = jQuery.parseJSON(data);
+                if (response.code != 0) {
+                    console.log(data);
+                    toast("pcs_token错误：" + response.msg);
+                    return;
+                }
+                jsonstr = decodeURIComponent(response.value);
+                //alert(nodeListStr);
+                if (jsonstr == "") {
+                    code=getPar("code");
+                    if (code.length>0){
+                        $.get('/router/oauth.php',{method:"getPcsToken",code:code},function(token){
+                                encodetoken = encodeURIComponent(token);
+                                userconfig=jQuery.parseJSON(token);
+                                toast(token);
+                                //token 存到小米配置
+                                routerRequest.request({
+                                    path: "/api-third-party/service/datacenter/set_config",
+                                    type: "GET",
+                                    data: {
+                                        appId:appId,
+                                        key:"pcs_token",
+                                        value:encodetoken
+                                    },
+                                    success: function(data) {
+                                        var response = jQuery.parseJSON(data);
+                                        if (response.code != 0) {
+                                            alert("错误：" + response.msg);
+                                            return;
+                                        }
+                                        $.get('/router/oauth.php',
+                                            {
+                                                method : "getQuota",
+                                                access_token : userconfig.access_token
+                                            }, function(ret) {
+                                                router_app.$data.quota=ret.quota;
+                                                router_app.$data.used=ret.used;
+                                            }, "JSON");
+                                    },
+                                    error: function(data) {
+                                        console.log("error:", data);
+                                        alert("网络失败");
+                                    }
+                                });
+
+                            },
+                            "text");
+                    }
+                }
+
+
+
+
+
+
+            },
+            error: function (data) {
+                console.log("error:", data);
+                alert("网络失败");
+            }
+        });
+
+
         //插件状态
         routerRequest.request({
             path: "/api-third-party/service/datacenter/plugin_control",
@@ -529,47 +602,6 @@
             }
         });
 
-    }
-    code=getPar("code");
-    if (code.length>0){
-        toast(code);
-        $.get('/router/oauth.php',{method:"getPcsToken",code:code},function(token){
-                console.log(token);
-                encodetoken = encodeURIComponent(token);
-                userconfig=jQuery.parseJSON(token);
-                toast(token)
-                //token 存到小米配置
-                routerRequest.request({
-                    path: "/api-third-party/service/datacenter/set_config",
-                    type: "GET",
-                    data: {
-                        appId:appId,
-                        key:"pcs_token",
-                        value:encodetoken
-                    },
-                    success: function(data) {
-                        var response = jQuery.parseJSON(data);
-                        if (response.code != 0) {
-                            alert("错误：" + response.msg);
-                            return;
-                        }
-                        $.get('/router/oauth.php',
-                            {
-                                method : "getQuota",
-                                access_token : userconfig.access_token
-                            }, function(ret) {
-                                router_app.$data.quota=ret.quota;
-                                router_app.$data.used=ret.used;
-                            }, "JSON");
-                    },
-                    error: function(data) {
-                        console.log("error:", data);
-                        alert("网络失败");
-                    }
-                });
-
-            },
-            "text");
     }
 
 

@@ -4,16 +4,16 @@
 
 #include "MRApp.h"
 
-class Shadowsocks : public MRApp {
+class BaiduPcsSync : public MRApp {
 public:
-    Shadowsocks();
-    virtual ~Shadowsocks(){};
+    BaiduPcsSync();
+    virtual ~BaiduPcsSync(){};
 
     void config();
-    void runShadowsocks();
-    void stopShadowsocks();
+    void runFrpc();
+    void stopFrpc();
 
-    void saveConfig(const std::string configData);
+    void saveConfig(struct json_object *configData);
     std::string getMethod(const std::string &params);
     std::string getData(const std::string &params);
     std::string getDataByKey(const std::string &params,std::string key);
