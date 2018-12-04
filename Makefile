@@ -17,7 +17,7 @@ dir :
 	mkdir -p $(BUILDDIR)
 
 sync :
-	$(CXX) $(CXXFLAGS)  JSON.cpp inifile.c BaiduPcsSync.cpp $(LIB_DIR) $(LDFLAGS) -o $(BINARY)
+	$(CXX) $(CXXFLAGS)  JSON.cpp Tools.cpp inifile.c BaiduPcsSync.cpp $(LIB_DIR) $(LDFLAGS) -o $(BINARY)
 	
 clean:
 	rm -r build

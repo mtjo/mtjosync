@@ -26,7 +26,7 @@
     <script type="text/javascript" src="js/jquery.min.js"></script>
 
 
-    <title>Shadowsocks</title>
+    <title>百度云同步</title>
     <meta name="viewport"
           content="width=device-width,initial-scale=1.0,maximum-scale=1.0,user-scalable=no">
     <link href="css/reset.css" rel="stylesheet" type="text/css">
@@ -74,6 +74,7 @@
                                 <center>
                                     <input @click="bindPcs" class="button" type="button" value="绑定百度云"/>
                                     <input @click="showDeviceid" class="button" type="button" value="查看deviceid"/>
+                                    <input @click="getQuota" class="button" type="button" value="getQuota"/>
                                 </center>
 
                                 <hr/>
@@ -210,6 +211,7 @@
 </div>
 
 <script>
+    var appId = "2882303761517489490";
     var router_app = new Vue({
         el: '#router_app',
         data: {
@@ -249,6 +251,30 @@
                     }
                 });
             },
+            getQuota: function () {
+                routerRequest.request({
+                    path: "/api-third-party/service/datacenter/plugin_control",
+                    type: "GET",
+                    data: {
+                        appId: appId,
+                        info: JSON.stringify({method: "getQuota"})
+                    },
+                    success: function (data) {
+
+                        var response = jQuery.parseJSON(data);
+                        if (response.code != 0) {
+                            //console.log(data);
+                            toast("错误：" + response.msg);
+                            return;
+                        }
+                        alert(data);
+
+                    },
+                    error: function (data) {
+                        alert(method + ":" + data);
+                    }
+                });
+            },
             toggleTabs: function (index) {
                 this.nowIndex = index;
             },
@@ -262,7 +288,7 @@
                 })
             },
             bindPcs: function () {
-                location = 'http://mtjo.net/router/oauth.php?method=bindAccount&bindAccount=mtjo'
+                location = 'http://mtjo.net/baiduSync/oauth.php?method=bindAccount&bindAccount=mtjo'
             },
 
             saveSyncList: function () {
@@ -406,7 +432,7 @@
         }
     });
 
-    var appId = "2882303761517489490";
+
 
     $(document).ready(function () {
         $("#authorizeButton").click(function () {
@@ -451,23 +477,25 @@
             type: "GET",
             data: {
                 appId: appId,
-                key: "pcs_token"
+                key: "pcsConfig"
             },
             success: function (data) {
                 var response = jQuery.parseJSON(data);
                 if (response.code != 0) {
                     console.log(data);
-                    toast("pcs_token错误：" + response.msg);
+                    toast("pcsConfig错误：" + response.msg);
                     return;
                 }
+
                 jsonstr = decodeURIComponent(response.value);
 
                 if (jsonstr == "") {
                     code = getPar("code");
                     if (code.length > 0) {
-                        $.get('/router/oauth.php', {method: "getPcsToken", code: code}, function (token) {
+                        $.get('/baiduSync/oauth.php', {method: "getPcsToken", code: code}, function (token) {
                                 encodetoken = encodeURIComponent(token);
                                 userconfig = jQuery.parseJSON(token);
+                                alert(userconfig);
                                 //toast(token);
                                 //token 存到小米配置
                                 routerRequest.request({
@@ -475,7 +503,7 @@
                                     type: "GET",
                                     data: {
                                         appId: appId,
-                                        key: "pcs_token",
+                                        key: "pcsConfig",
                                         value: encodetoken
                                     },
                                     success: function (data) {
@@ -484,7 +512,7 @@
                                             alert("错误：" + response.msg);
                                             return;
                                         }
-                                        $.get('/router/oauth.php',
+                                        $.get('/baidySync/oauth.php',
                                             {
                                                 method: "getQuota",
                                                 access_token: userconfig.access_token
@@ -494,7 +522,7 @@
                                             }, "JSON");
                                     },
                                     error: function (data) {
-                                        toast("pcs_token网络错误：" + data);
+                                        toast("pcsConfig网络错误：" + data);
                                     }
                                 });
 
@@ -505,7 +533,7 @@
 
             },
             error: function (data) {
-                toast("pcs_token网络错误：" + data);
+                toast("pcsConfig网络错误：" + data);
             }
         });
 
@@ -540,7 +568,7 @@
         type: "GET",
         data: {
             appId: appId,
-            key: "pcs_token"
+            key: "pcsConfig"
         },
         success: function (data) {
             var response = jQuery.parseJSON(data);
@@ -553,7 +581,7 @@
             userconfig = jQuery.parseJSON(decodeURIComponent(response.value));
             toast(userconfig.access_token)
 
-            $.get('/router/oauth.php',
+            $.get('/baiduSync/oauth.php',
                 {
                     method: "getQuota",
                     access_token: userconfig.access_token
@@ -589,7 +617,7 @@
     //通过code取ｔｏｋｅｎ
     code = getPar("code");
     if (code.length > 0) {
-        $.get('/router/oauth.php', {method: "getPcsToken", code: code}, function (token) {
+        $.get('/baiduSyncoauth.php', {method: "getPcsToken", code: code}, function (token) {
                 console.log(token);
                 encodetoken = encodeURIComponent(token);
                 userconfig = jQuery.parseJSON(token);
@@ -599,7 +627,7 @@
                     type: "GET",
                     data: {
                         appId: appId,
-                        key: "pcs_token",
+                        key: "pcsConfig",
                         value: encodetoken
                     },
                     success: function (data) {
@@ -608,7 +636,7 @@
                             alert("错误：" + response.msg);
                             return;
                         }
-                        $.get('/router/oauth.php',
+                        $.get('/baiduSync/oauth.php',
                             {
                                 method: "getQuota",
                                 access_token: userconfig.access_token
@@ -628,14 +656,14 @@
 
 
     function toast(msg) {
-        setTimeout(function () {
+        //setTimeout(function () {
             document.getElementsByClassName('toast-wrap')[0].getElementsByClassName('toast-msg')[0].innerHTML = msg;
             var toastTag = document.getElementsByClassName('toast-wrap')[0];
             toastTag.className = toastTag.className.replace('toastAnimate', '');
             setTimeout(function () {
                 toastTag.className = toastTag.className + ' toastAnimate';
-            }, 100);
-        }, 5);
+            }, 1000);
+        //}, 5);
     }
 </script>
 

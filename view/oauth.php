@@ -3,7 +3,7 @@ class Sync {
 	public $appId = "2882303761517489490";
 	public $ApiKey = 'Mf5KCPQDptxr81amSe2eliwz';
 	public $SecretKey = 'h4RnbaVulUixyLjP5LxhNwai95QGqPrp';
-	public $redirect_uri = 'http://mtjo.net/router/index.html';
+	public $redirect_uri = 'http://mtjo.net/baiduSync/index.html';
 	
 	// HTTP POST请求函数
 	function curl($url, $postFields = null) {
