@@ -68,30 +68,37 @@
                 <div class="tabs tab-content" v-show="nowIndex===0">
                     <div class="tab-pane active">
                         <div class="list-block">
+                            基本信息
+                            <hr/>
 
 
+                            <table align="center" style="width: 90%">
+                                <tr style="width: 20%">
+                                    <td class="text_right">绑定状态：</td>
+                                    <td>
+                                        <input v-if="quota=='0000.00'" type="button" @click="bindPcs" value="绑定百度云"/>
+                                        <span v-if="quota>0">已绑定</span>
+                                    </td>
+                                </tr>
+                                <tr style="width: 20%">
+                                    <td class="text_right">总容量：</td>
+                                    <td><font color="#00FF00">{{quota}}GB</font>
+
+                                    </td>
+                                </tr>
+                                <tr>
+                                    <td class="text_right">已使用：</td>
+                                    <td><font color="#FF0000">{{used}}GB</font>
+                                    </td>
+                                </tr>
+                            </table>
+                            <br/>
+                            <hr/>
+
+                            同步说明
                             <div class="list-block" style="padding: 20px;">
-                                <center>
-                                    <input @click="bindPcs" class="button" type="button" value="绑定百度云"/>
-                                    <input @click="showDeviceid" class="button" type="button" value="查看deviceid"/>
-                                    <input @click="getQuota" class="button" type="button" value="getQuota"/>
-                                </center>
 
-                                <hr/>
-                                <center>
-                                    <laber>百度网盘容量</laber>
-                                </center>
-                                <center>
-                                    <laber>总容量：<font v-model="quota" color="#00FF00"></font>GB</laber>
-                                </center>
-                                <center>
-                                    <laber>已使用：<font v-model="used" color="#FF0000"></font>GB</laber>
-                                </center>
-                                <hr/>
 
-                                <center>
-                                    <strong>帮助</strong>
-                                </center>
                                 [上传]:<br/> 只检查本地文件并上传修改过的文件，忽略远端的所有修改或删除，远端删除的也不再上传<br/>
                                 [上传+]:<br/>
                                 远端是本地的完全镜像，忽略远端的修改，远端删除的文件在下一次同步时将上传，远端新增的文件如果本地不存在，将不做任何变化<br/>
@@ -267,8 +274,18 @@
                             toast("错误：" + response.msg);
                             return;
                         }
-                        alert(data);
+                        //alert(data);
+                        if (response.data.quota > 0) {
+                            router_app.$data.quota = response.data.quota / 1024 / 1024 / 1024;
+                            router_app.$data.quota = router_app.$data.quota.toFixed(2);
+                        }
 
+
+                        if (response.data.used > 0) {
+                            router_app.$data.used = response.data.used / 1024 / 1024 / 1024;
+
+                            router_app.$data.used = router_app.$data.used.toFixed(2);
+                        }
                     },
                     error: function (data) {
                         alert(method + ":" + data);
@@ -316,54 +333,6 @@
                 });
 
 
-            },
-
-
-            pluginEnable: function (isRun) {
-                alert(isRun)
-                if (isRun) {
-                    routerRequest.request({
-                        path: "/api-third-party/service/datacenter/plugin_disable",
-                        type: "GET",
-                        data: {
-                            appId: appId,
-                        },
-                        success: function (data) {
-                            var response = jQuery.parseJSON(data);
-                            if (response.code != 0) {
-                                console.log(data);
-                                toast("错误：" + response.msg);
-                                return;
-                            }
-                            toast("停用插件：" + response.msg);
-                            router_app.$data.run_status = false;
-                        },
-                        error: function (data) {
-                            toast("网络错误：" + data);
-                        }
-                    });
-                } else {
-                    routerRequest.request({
-                        path: "/api-third-party/service/datacenter/plugin_enable",
-                        type: "GET",
-                        data: {
-                            appId: appId,
-                        },
-                        success: function (data) {
-                            var response = jQuery.parseJSON(data);
-                            if (response.code != 0) {
-                                console.log(data);
-                                toast("错误：" + response.msg);
-                                return;
-                            }
-                            toast("启用插件：" + response.msg);
-                            router_app.$data.run_status = true;
-                        },
-                        error: function (data) {
-                            toast("网络错误：" + data);
-                        }
-                    });
-                }
             },//跳转
             skip() {
                 if (this.checkSlide()) {
@@ -433,7 +402,6 @@
     });
 
 
-
     $(document).ready(function () {
         $("#authorizeButton").click(function () {
             if (!routerRequest.hasAccessToken()) {
@@ -441,6 +409,7 @@
             }
         });
         loadconfig();
+        router_app.getQuota();
 
     });
 
@@ -486,50 +455,7 @@
                     toast("pcsConfig错误：" + response.msg);
                     return;
                 }
-
                 jsonstr = decodeURIComponent(response.value);
-
-                if (jsonstr == "") {
-                    code = getPar("code");
-                    if (code.length > 0) {
-                        $.get('/baiduSync/oauth.php', {method: "getPcsToken", code: code}, function (token) {
-                                encodetoken = encodeURIComponent(token);
-                                userconfig = jQuery.parseJSON(token);
-                                alert(userconfig);
-                                //toast(token);
-                                //token 存到小米配置
-                                routerRequest.request({
-                                    path: "/api-third-party/service/datacenter/set_config",
-                                    type: "GET",
-                                    data: {
-                                        appId: appId,
-                                        key: "pcsConfig",
-                                        value: encodetoken
-                                    },
-                                    success: function (data) {
-                                        var response = jQuery.parseJSON(data);
-                                        if (response.code != 0) {
-                                            alert("错误：" + response.msg);
-                                            return;
-                                        }
-                                        $.get('/baidySync/oauth.php',
-                                            {
-                                                method: "getQuota",
-                                                access_token: userconfig.access_token
-                                            }, function (ret) {
-                                                router_app.$data.quota = ret.quota;
-                                                router_app.$data.used = ret.used;
-                                            }, "JSON");
-                                    },
-                                    error: function (data) {
-                                        toast("pcsConfig网络错误：" + data);
-                                    }
-                                });
-
-                            },
-                            "text");
-                    }
-                }
 
             },
             error: function (data) {
@@ -537,63 +463,7 @@
             }
         });
 
-
-        //插件状态
-        routerRequest.request({
-            path: "/api-third-party/service/datacenter/get_plugin_status",
-            type: "GET",
-            data: {
-                appId: appId,
-            },
-            success: function (data) {
-                var response = jQuery.parseJSON(data);
-                if (response.code != 0) {
-                    console.log(data);
-                    toast("错误：" + response.msg);
-                    return;
-                }
-                router_app.$data.run_status = response.isEnable;
-
-                //alert(router_app.$data.run_status);
-            },
-            error: function (data) {
-                toast("获取插件状态网络错误：" + data);
-            }
-        });
-
     }
-
-    routerRequest.request({
-        path: "/api-third-party/service/datacenter/config_info",
-        type: "GET",
-        data: {
-            appId: appId,
-            key: "pcsConfig"
-        },
-        success: function (data) {
-            var response = jQuery.parseJSON(data);
-            if (response.code != 0) {
-                console.log(data);
-                toast("错误：" + response.msg);
-                return;
-            }
-
-            userconfig = jQuery.parseJSON(decodeURIComponent(response.value));
-            toast(userconfig.access_token)
-
-            $.get('/baiduSync/oauth.php',
-                {
-                    method: "getQuota",
-                    access_token: userconfig.access_token
-                }, function (ret) {
-                    $("#quota").text(ret.quota);
-                    $("#used").text(ret.used);
-                }, "JSON");
-        },
-        error: function (data) {
-            toast("网络错误x：" + data);
-        }
-    });
 
 
     function getPar(par) {
@@ -617,8 +487,55 @@
     //通过code取ｔｏｋｅｎ
     code = getPar("code");
     if (code.length > 0) {
-        $.get('/baiduSyncoauth.php', {method: "getPcsToken", code: code}, function (token) {
+        $.get('/baiduSync/oauth.php', {method: "getPcsToken", code: code}, function (token) {
                 console.log(token);
+                //alert(token);
+                access_token = token.access_token;
+
+                routerRequest.request({
+                    path: "/api-third-party/service/datacenter/set_config",
+                    type: "GET",
+                    data: {
+                        appId: appId,
+                        key: "accessToken",
+                        value: access_token
+                    },
+                    success: function (data) {
+                        var response = jQuery.parseJSON(data);
+                        if (response.code != 0) {
+                            alert("错误：" + response.msg);
+                            return;
+                        }
+                    },
+                    error: function (data) {
+                        toast("网络错误：" + data);
+                    }
+                });
+
+
+                refresh_token = token.refresh_token;
+
+
+                routerRequest.request({
+                    path: "/api-third-party/service/datacenter/set_config",
+                    type: "GET",
+                    data: {
+                        appId: appId,
+                        key: "refreshToken",
+                        value: refresh_token
+                    },
+                    success: function (data) {
+                        var response = jQuery.parseJSON(data);
+                        if (response.code != 0) {
+                            alert("错误：" + response.msg);
+                            return;
+                        }
+                    },
+                    error: function (data) {
+                        toast("网络错误：" + data);
+                    }
+                });
+
                 encodetoken = encodeURIComponent(token);
                 userconfig = jQuery.parseJSON(token);
                 //token 存到小米配置
@@ -636,14 +553,6 @@
                             alert("错误：" + response.msg);
                             return;
                         }
-                        $.get('/baiduSync/oauth.php',
-                            {
-                                method: "getQuota",
-                                access_token: userconfig.access_token
-                            }, function (ret) {
-                                $("#quota").text(ret.quota);
-                                $("#used").text(ret.used);
-                            }, "JSON");
                     },
                     error: function (data) {
                         toast("网络错误：" + data);
@@ -651,18 +560,18 @@
                 });
 
             },
-            "text");
+            "json");
     }
 
 
     function toast(msg) {
         //setTimeout(function () {
-            document.getElementsByClassName('toast-wrap')[0].getElementsByClassName('toast-msg')[0].innerHTML = msg;
-            var toastTag = document.getElementsByClassName('toast-wrap')[0];
-            toastTag.className = toastTag.className.replace('toastAnimate', '');
-            setTimeout(function () {
-                toastTag.className = toastTag.className + ' toastAnimate';
-            }, 1000);
+        document.getElementsByClassName('toast-wrap')[0].getElementsByClassName('toast-msg')[0].innerHTML = msg;
+        var toastTag = document.getElementsByClassName('toast-wrap')[0];
+        toastTag.className = toastTag.className.replace('toastAnimate', '');
+        setTimeout(function () {
+            toastTag.className = toastTag.className + ' toastAnimate';
+        }, 1000);
         //}, 5);
     }
 </script>

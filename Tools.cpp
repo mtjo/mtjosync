@@ -83,7 +83,7 @@ Tools::getUrl(const std::string url) {
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, req_reply);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
         curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
-        curl_easy_setopt(curl, CURLOPT_HEADER, 1);
+        //curl_easy_setopt(curl, CURLOPT_HEADER, 1);
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3); // set transport and time out time
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3);
         // start req
@@ -115,7 +115,7 @@ Tools::postUrl(const std::string url, const std::string postParams) {
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, req_reply);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
         curl_easy_setopt(curl, CURLOPT_NOSIGNAL, 1);
-        curl_easy_setopt(curl, CURLOPT_HEADER, 1);
+        //curl_easy_setopt(curl, CURLOPT_HEADER, 1);
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3);
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3);
         // start req

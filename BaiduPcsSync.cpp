@@ -61,16 +61,21 @@ BaiduPcsSync::onParameterRecieved(const std::string &params) {
         char *output = (char *)malloc(strlen(input)+1);
 
         Tools::urldecode(output, input);
-        data.put("pcsConfig",pcsConfig);
+        //data.put("pcsConfig",pcsConfig);
         pcsConfig  = output;
-        data.put("output",pcsConfig);
+        //data.put("output",pcsConfig);
 
 
         std::string accessToken=Tools::getParamsByKey(pcsConfig,"access_token");
         const std::string strUrl = "https://pcs.baidu.com/rest/2.0/pcs/quota?method=info&access_token="+accessToken;
 
         std::string res = Tools::getUrl(strUrl);
-        data.put("res",res);
+        std::string quota = Tools::getParamsByKey(res,"quota");
+        std::string used = Tools::getParamsByKey(res,"used");
+
+        data.put("quota",quota);
+        data.put("used",used);
+
         return JSONObject::success(data);
     }
 
