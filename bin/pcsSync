@@ -1,6 +1,5 @@
-#!/bin/bash
+#!/bin/ash
 #####################################################################################
-#
 # Author: mtjo
 # Web Home: http://mtjo.net/
 #####################################################################################
@@ -68,10 +67,10 @@ _init() {
 		refresh_access_token
 	fi
 	if [[ $((compress_date + 2592000)) -le $(date +'%s')  ||  $synctotal -ge 10000 ]]; then
-		echo "$(date +'%Y-%m-%d %H:%M:%S') Sync data from the last compression has 30 days, or total of sync files more than 1000 since from last compression." >> $syncyerrlog
-		echo "$(date +'%Y-%m-%d %H:%M:%S') Compress method: syncy.sh compress" >> $syncyerrlog
-		echo "$(date +'%Y-%m-%d %H:%M:%S') Sync data from the last compression has 30 days, or total of sync files more than 1000 since from last compression."
-		echo "$(date +'%Y-%m-%d %H:%M:%S') Compress method: syncy.sh compressdata"
+		echo "`date +'%Y-%m-%d %H:%M:%S'` Sync data from the last compression has 30 days, or total of sync files more than 1000 since from last compression." >> $syncyerrlog
+		echo "`date +'%Y-%m-%d %H:%M:%S'` Compress method: syncy.sh compress" >> $syncyerrlog
+		echo "`date +'%Y-%m-%d %H:%M:%S'` Sync data from the last compression has 30 days, or total of sync files more than 1000 since from last compression."
+		echo "`date +'%Y-%m-%d %H:%M:%S'` Compress method: syncy.sh compressdata"
 	fi
 }
 get_device_code() {
@@ -115,7 +114,7 @@ refresh_access_token() {
 	save_value access_token $access_token
 	save_value expires_in $expires_in
 	save_value refresh_date $refresh_date
-	echo "$(date +'%Y-%m-%d %H:%M:%S') Refresh access token success."
+	echo "`date +'%Y-%m-%d %H:%M:%S'` Refresh access token success."
 	checkUpdate
     return 0
 }
@@ -157,13 +156,13 @@ getPcsQuota() {
 			break
 		fi
 	done
-	[[ ${#response} -eq 0 ]] && echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Server not response on get pcs quota." >> $syncyerrlog && return 1
-	[[ -n "$iserror" ]] && echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Get pcs quota failed,$response." >> $syncyerrlog && return 1
+	[[ ${#response} -eq 0 ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Server not response on get pcs quota." >> $syncyerrlog && return 1
+	[[ -n "$iserror" ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Get pcs quota failed,$response." >> $syncyerrlog && return 1
 	quota=$(echo $response | sed -rn 's/.*\"quota\":([0-9]+).*/\1/p')
     used=$(echo $response | sed -rn 's/.*\"used\":([0-9]+).*/\1/p')
     quota=$((quota /1024/1024/1024))
     used=$((used /1024/1024/1024))
-    echo "$(date +'%Y-%m-%d %H:%M:%S') PCS quota is ${quota}G,used ${used}G."
+    echo "`date +'%Y-%m-%d %H:%M:%S'` PCS quota is ${quota}G,used ${used}G."
     return 0
 }
 getPcsFileMeta() {
@@ -179,14 +178,14 @@ getPcsFileMeta() {
 			break
 		fi
 	done
-	[[ ${#response_str} -eq 0 ]] && echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Server not response on get pcs file meta." >> $syncyerrlog && return 1
-	[[ -n "$iserror" ]] && echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Get file meta failed: $1" >> $syncyerrlog && return 1
+	[[ ${#response_str} -eq 0 ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Server not response on get pcs file meta." >> $syncyerrlog && return 1
+	[[ -n "$iserror" ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Get file meta failed: $1" >> $syncyerrlog && return 1
 	return 0
 }
 getPcsFileList() {
 	unset errcode
     if [[ $# -ne 3 ]]; then
-        echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Get file list failed: parameters number error." >> $syncyerrlog && return 1
+        echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Get file list failed: parameters number error." >> $syncyerrlog && return 1
     fi
     encodeUrl "$1"
     local limit="$2-$3"
@@ -203,21 +202,21 @@ getPcsFileList() {
 			break
 		fi
 	done
-	[[ ${#response_str} -eq 0 ]] && echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Server not response on get pcs file list($1)." >> $syncyerrlog && return 1
+	[[ ${#response_str} -eq 0 ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Server not response on get pcs file list($1)." >> $syncyerrlog && return 1
 	if [[ -n "$iserror" ]]; then
         errcode=$(echo "$response_str" | sed -rn 's/.*\"error_code\":([0-9]+),.*/\1/p')
 		[[ -z "$errcode" ]] && errcode=1
 		if [[ $errcode -eq 31066 ]]; then
 			return $errcode
 		else
-			echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Get file list failed: $1,$response_str" >> $syncyerrlog
+			echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Get file list failed: $1,$response_str" >> $syncyerrlog
 			errorcount=$((errorcount + 1))
 			return $errcode
 		fi
     fi
     unicodeDecode
     if [[ $? -eq 1 ]]; then
-        echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Decode unicode file list failed: $3." >> $syncyerrlog
+        echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Decode unicode file list failed: $3." >> $syncyerrlog
         return 1
     fi
 	return 0
@@ -235,9 +234,9 @@ mUpload2Pcs() {
 			break
 		fi
 	done
-	[[ ${#response} -eq 0 ]] && echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Server not response on upload to pcs." >> $syncyerrlog && return 1
-	[[ -n "$iserror" ]] && echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Upload file to pcs failed: $1,$response." >> $syncyerrlog && return 1
-	echo "$(date +'%Y-%m-%d %H:%M:%S') Upload file \"$1\" completed."
+	[[ ${#response} -eq 0 ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Server not response on upload to pcs." >> $syncyerrlog && return 1
+	[[ -n "$iserror" ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Upload file to pcs failed: $1,$response." >> $syncyerrlog && return 1
+	echo "`date +'%Y-%m-%d %H:%M:%S'` Upload file \"$1\" completed."
 	return 0
 }
 uploadFile2Pcs() {
@@ -253,17 +252,17 @@ uploadFile2Pcs() {
 			break
 		fi
 	done
-	[[ ${#response} -eq 0 ]] && echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Server not response on upload to pcs." >> $syncyerrlog && return 1
-	[[ -n "$iserror" ]] && echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Upload file to pcs failed: $1,$response." >> $syncyerrlog && return 1
+	[[ ${#response} -eq 0 ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Server not response on upload to pcs." >> $syncyerrlog && return 1
+	[[ -n "$iserror" ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Upload file to pcs failed: $1,$response." >> $syncyerrlog && return 1
     local rsize=$(echo "$response" | sed -rn 's/.*\"size\":([0-9]+),.*/\1/p')
 	local rmd5=$(echo "$response" | sed -rn 's/.*\"md5\":\"([^"]+)\".*/\1/p')
 	if [[ -z "$rmd5" || -z "$rsize" || $rsize -ne $3 ]]; then
-		echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Upload File failed, remote file error : $1,$response." >> $syncyerrlog
+		echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Upload File failed, remote file error : $1,$response." >> $syncyerrlog
         deletePcsFile "$4" "s"
         return 1
     fi
 	echo "$rmd5 $2 $3 $5" >> $syncydb
-	echo "$(date +'%Y-%m-%d %H:%M:%S') Upload file \"$1\" completed."
+	echo "`date +'%Y-%m-%d %H:%M:%S'` Upload file \"$1\" completed."
 	return 0
 }
 rapidUploadFile2Pcs() {
@@ -285,11 +284,11 @@ rapidUploadFile2Pcs() {
 			break
 		fi
 	done
-	[[ ${#response} -eq 0 ]] && echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Server not response on rapid upload file to pcs." >> $syncyerrlog && return 1
+	[[ ${#response} -eq 0 ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Server not response on rapid upload file to pcs." >> $syncyerrlog && return 1
 	if [[ -n "$iserror" ]]; then
 		errcode=$(echo "$response" | sed -rn 's/.*\"error_code\":([0-9]+),.*/\1/p')
 		if [[ $errcode -eq 31079 ]]; then
-			echo "$(date +'%Y-%m-%d %H:%M:%S') File md5 not found, upload the whole file($1)."
+			echo "`date +'%Y-%m-%d %H:%M:%S'` File md5 not found, upload the whole file($1)."
 			if [[ $3 -le $((burstblocksize * 1048576 + 1048576)) ]]; then  #if file size less-than-or-equal-to  10M
 				uploadFile2Pcs "$1" "$2" "$3" "$4" "$5" "$6"
 				return $?
@@ -298,15 +297,15 @@ rapidUploadFile2Pcs() {
 				return $?
 			fi
 		else
-			echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Rapid upload file failed: $1,$response" >> $syncyerrlog
+			echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Rapid upload file failed: $1,$response" >> $syncyerrlog
 			return 1
 		fi
 	else
 		local rsize=$(echo "$response" | sed -rn 's/.*\"size\":([0-9]+),.*/\1/p')
 		local rmd5=$(echo "$response" | sed -rn 's/.*\"md5\":\"([^"]+)\".*/\1/p')
-		[[ -z "$rmd5"  ||  -z "$rsize"  ||  $3 -ne $rsize ]] && echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): File is rapiduploaded,but can not get remote file size or mtime: $1,$response." >> $syncyerrlog && return 1
+		[[ -z "$rmd5"  ||  -z "$rsize"  ||  $3 -ne $rsize ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: File is rapiduploaded,but can not get remote file size or mtime: $1,$response." >> $syncyerrlog && return 1
 		echo "$rmd5 $2 $3 $5" >> $syncydb
-		echo "$(date +'%Y-%m-%d %H:%M:%S') Rapid upload file \"$1\" completed."
+		echo "`date +'%Y-%m-%d %H:%M:%S'` Rapid upload file \"$1\" completed."
 		return 0
 	fi
 }
@@ -315,7 +314,7 @@ burstUploadFile2Pcs() {
 		uploadFile2Pcs "$1" "$2" "$3" "$4" "$5" "$6"
 		return $?
     elif [[ $3 -gt $((burstblocksize * 1073741824)) ]]; then
-        echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): File $1 size out of setting, maxsize = burstblocksize * 1024M." >> $syncyerrlog
+        echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: File $1 size out of setting, maxsize = burstblocksize * 1024M." >> $syncyerrlog
         return 1
 	fi
 	local startblk=0
@@ -324,19 +323,19 @@ burstUploadFile2Pcs() {
 	if [[ -e "$1.tmp.syy" ]]; then
 		if [[ $(sed -n '1p' "$1.tmp.syy") != "upload $2 $3" ]]; then
             echo "upload $2 $3" > "$1.tmp.syy"
-			echo "$(date +'%Y-%m-%d %H:%M:%S') Local file:\"$1\" is modified, reupload the whole file."
+			echo "`date +'%Y-%m-%d %H:%M:%S'` Local file:\"$1\" is modified, reupload the whole file."
         else
-            local blockinfo=($(grep "^md5-$startblk " "$1.tmp.syy" | awk '{print $2"\n"$3}'))
+            local blockinfo=$(grep "^md5-$startblk " "$1.tmp.syy" | awk '{print $2"\n"$3}')
             while [[ -n "$blockinfo" ]]; do
                 if [[ $startblk -eq 0 ]]; then
-                    param="$param\"${blockinfo[0]}\""
+                    param=$param\"$(blockinfo[0])\""
                 else
-                    param="$param,\"${blockinfo[0]}\""
+                    param="$param,\"$(blockinfo[0])\""
                 fi
-                startblk=$((startblk + ${blockinfo[1]}))
-                blockinfo=($(grep "^md5-$startblk " "$1.tmp.syy" | awk '{print $2"\n"$3}'))
+                startblk=$((startblk + $(blockinfo[1])))
+                blockinfo=$(grep "^md5-$startblk " "$1.tmp.syy" | awk '{print $2"\n"$3}')
             done
-			echo "$(date +'%Y-%m-%d %H:%M:%S') Resuming burst upload file \"$1\"."
+			echo "`date +'%Y-%m-%d %H:%M:%S'` Resuming burst upload file \"$1\"."
         fi
     else
         echo "upload $2 $3" >> "$1.tmp.syy"
@@ -359,9 +358,9 @@ burstUploadFile2Pcs() {
 				break
 			fi
 		done
-		[[ ${#response} -eq 0 ]] && echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Server not response on burst upload file to pcs." >> $syncyerrlog && return 1
+		[[ ${#response} -eq 0 ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Server not response on burst upload file to pcs." >> $syncyerrlog && return 1
 		if [[ -n "$iserror" ]]; then
-			echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Burst upload file failed: $1,$response" >> $syncyerrlog
+			echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Burst upload file failed: $1,$response" >> $syncyerrlog
 			rm "$tmpdir/syncy.upfile.tmp"
 			return 1
 		fi
@@ -388,18 +387,18 @@ burstUploadFile2Pcs() {
 			break
 		fi
 	done
-	[[ ${#response} -eq 0 ]] && echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Server not response on create superfile." >> $syncyerrlog && return 1
-	[[ -n "$iserror" ]] && echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Create superfile failed: $1,$response" >> $syncyerrlog && return 1
+	[[ ${#response} -eq 0 ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Server not response on create superfile." >> $syncyerrlog && return 1
+	[[ -n "$iserror" ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Create superfile failed: $1,$response" >> $syncyerrlog && return 1
 	rm "$1.tmp.syy"
 	local rsize=$(echo "$response" | sed -rn 's/.*\"size\":([0-9]+),.*/\1/p')
 	local rmd5=$(echo "$response" | sed -rn 's/.*\"md5\":\"([^"]+)\".*/\1/p')
     if [[ -z "$rmd5" || -z "$rsize" || $rsize -ne $3 ]]; then
-        echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Burst upload file failed: $1,$response." >> $syncyerrlog
+        echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Burst upload file failed: $1,$response." >> $syncyerrlog
         deletePcsFile "$4" "s"
         return 1
     fi
 	echo "$rmd5 $2 $3 $5" >> $syncydb
-	echo "$(date +'%Y-%m-%d %H:%M:%S') Burst upload file \"$1\" completed."
+	echo "`date +'%Y-%m-%d %H:%M:%S'` Burst upload file \"$1\" completed."
 	return 0
 }
 
@@ -409,12 +408,12 @@ downloadPcsFile() {
     if [[ -e "$4.tmp.syy" ]]; then
         if [[ $(sed -n '1p' "$4.tmp.syy") != "download $2 $3" ]]; then
             echo "download $2 $3" > "$4.tmp.syy"
-			echo "$(date +'%Y-%m-%d %H:%M:%S') Remote file:\"$1\" is modified, redownload the whole file."
+			echo "`date +'%Y-%m-%d %H:%M:%S'` Remote file:\"$1\" is modified, redownload the whole file."
             rm -f "$4"
         else
             bkcnt=$(grep "dlinfo" "$4.tmp.syy" | awk '{print $2}')
             saddr=$(grep "dlinfo" "$4.tmp.syy" | awk '{print $3}')
-			echo "$(date +'%Y-%m-%d %H:%M:%S') Resuming download file \"$4\"."
+			echo "`date +'%Y-%m-%d %H:%M:%S'` Resuming download file \"$4\"."
         fi
     else
         echo "download $2 $3" >> "$4.tmp.syy"
@@ -458,7 +457,7 @@ downloadPcsFile() {
 				fi
 			done
 			if [[ $tmpsize -ne $((eaddr - saddr + 1)) ]]; then
-			   echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Download file failed: \"$4\"." >> $syncyerrlog
+			   echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Download file failed: \"$4\"." >> $syncyerrlog
 			   rm -f "$tmpdir/syncy.dlfile.tmp"
 			   return 1
 			fi
@@ -469,15 +468,15 @@ downloadPcsFile() {
 			rm -f "$tmpdir/syncy.dlfile.tmp"
 		done
 	fi
-    local lmeta=($(ls -l --time-style=+"%s" "$4" | awk '{print $6"\n"$5}'))
+    local lmeta=`ls -l --time-style=+"%s" "$4" | awk '{print $6"\n"$5}'`
     rm "$4.tmp.syy"
     if [[ ${lmeta[1]} -ne $3 ]]; then
-        echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Download file failed: \"$4\"." >> $syncyerrlog
+        echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Download file failed: \"$4\"." >> $syncyerrlog
         rm "$4"
         return 1
     fi
     echo "$2 ${lmeta[0]} ${lmeta[1]} $5" >> $syncydb
-    echo "$(date +'%Y-%m-%d %H:%M:%S') Download file \"$4\" completed."
+    echo "`date +'%Y-%m-%d %H:%M:%S'` Download file \"$4\" completed."
     return 0
 }
 
@@ -494,9 +493,9 @@ deletePcsFile() {
 			break
 		fi
 	done
-	[[ ${#response} -eq 0 ]] && echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Server not response on delete pcs files." >> $syncyerrlog && return 1
-	[[ -n "$iserror" ]] && echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Delete remote file failed: $1,$response." >> $syncyerrlog && return 1
-	[[ $# -eq 1 ]] && echo "$(date +'%Y-%m-%d %H:%M:%S') Delete remote file or directory \"$1\" completed."
+	[[ ${#response} -eq 0 ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Server not response on delete pcs files." >> $syncyerrlog && return 1
+	[[ -n "$iserror" ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Delete remote file failed: $1,$response." >> $syncyerrlog && return 1
+	[[ $# -eq 1 ]] && echo "`date +'%Y-%m-%d %H:%M:%S'` Delete remote file or directory \"$1\" completed."
 	return 0
 }
 movePcsFile() {
@@ -514,18 +513,18 @@ movePcsFile() {
 			break
 		fi
 	done
-	[[ ${#response} -eq 0 ]] && echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Server not response on move pcs files." >> $syncyerrlog && return 1
-	[[ -n "$iserror" ]] && echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Move remote file or directory \"$1\" to \"$2\" failed: ." >> $syncyerrlog && return 1
-	echo "$(date +'%Y-%m-%d %H:%M:%S') Move remote file or directory \"$1\" to \"$2\" completed."
+	[[ ${#response} -eq 0 ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Server not response on move pcs files." >> $syncyerrlog && return 1
+	[[ -n "$iserror" ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Move remote file or directory \"$1\" to \"$2\" failed: ." >> $syncyerrlog && return 1
+	echo "`date +'%Y-%m-%d %H:%M:%S'` Move remote file or directory \"$1\" to \"$2\" completed."
 	return 0
 }
 checkPcsPath() {
 	if [[ $((${#1} + ${#2})) -ge 999 ]]; then
-		echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Length of PCS path($1/$2) must less than 1000, skip upload." >> $syncyerrlog
+		echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Length of PCS path($1/$2) must less than 1000, skip upload." >> $syncyerrlog
 		return 1
 	fi
 	if [[ ${2:$((${#2} -1)):1} = "." || $(expr index "$2" '\?|"<>:*') -ne 0 ]]; then
-		echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): PCS path($1/$2) is invalid, please check whether special characters exists in the path, skip upload." >> $syncyerrlog
+		echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: PCS path($1/$2) is invalid, please check whether special characters exists in the path, skip upload." >> $syncyerrlog
 		return 1
 	fi
 	return 0
@@ -544,7 +543,7 @@ checkAndCreatePCSdir() {
 			break
 		fi
 	done
-	[[ ${#response} -eq 0 ]] && echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Server not response on check pcs directory." >> $syncyerrlog && return 1
+	[[ ${#response} -eq 0 ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Server not response on check pcs directory." >> $syncyerrlog && return 1
 	if [[ -n "$iserror" && $errcode -eq 31066 ]]; then
 		retrycnt=0
 		while [[ $retrycnt -le $retrytimes ]]; do
@@ -557,8 +556,8 @@ checkAndCreatePCSdir() {
 				break
 			fi
 		done
-		[[ ${#response} -eq 0 ]] && echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Server not response on create pcs directory." >> $syncyerrlog && return 1
-        [[ -n "$iserror" ]] && echo "$(date +'%Y-%m-%d %H:%M:%S') Remote directory \"$1\" is not exist and create failed. " && return 1
+		[[ ${#response} -eq 0 ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Server not response on create pcs directory." >> $syncyerrlog && return 1
+        [[ -n "$iserror" ]] && echo "`date +'%Y-%m-%d %H:%M:%S'` Remote directory \"$1\" is not exist and create failed. " && return 1
     fi
 	return 0
 }
@@ -592,7 +591,7 @@ compressData() {
 startCompress() {
     if [[ $# -eq 0 ]]; then
 		local mpath=$syncpath
-		echo "$(date +'%Y-%m-%d %H:%M:%S') Start compress sync data."
+		echo "`date +'%Y-%m-%d %H:%M:%S'` Start compress sync data."
 	else
 		local mpath=$1
     fi
@@ -608,7 +607,7 @@ startCompress() {
         if [[ -e "$syncydb" ]]; then
             syncydbtmp="$localdir/.syncy.info.db1"
             [[ -e "$syncydbtmp" ]] && rm -f "$syncydbtmp"
-            [[ $bufferMemory = "on" ]] && syncInfo=($(cat $syncydb))
+            [[ $bufferMemory = "on" ]] && syncInfo=$(cat $syncydb)
             compressData "$localdir"
             mv -f "$syncydbtmp" "$syncydb"
         fi
@@ -619,7 +618,7 @@ startCompress() {
 		synctotal=0
 		save_value compress_date $compress_date
 		save_value synctotal $synctotal
-		echo "$(date +'%Y-%m-%d %H:%M:%S') Compress sync data complete."
+		echo "`date +'%Y-%m-%d %H:%M:%S'` Compress sync data complete."
 	fi
 }
 checkEliminate() {
@@ -685,13 +684,13 @@ unicodeDecode() {
             local chncharline=$(grep "^${uchar:2:3}0 .*" $unicodetable)
 		    chnchar=$(echo "$chncharline" | awk "{print $saddr}")
             if [[ -z "$chnchar" || "$chnchar" = "null" ]]; then
-                echo "$(date +'%Y-%m-%d %H:%M:%S') Decode failed($uchar), there is not this character's code in unicodetable."
+                echo "`date +'%Y-%m-%d %H:%M:%S'` Decode failed($uchar), there is not this character's code in unicodetable."
                 return 1
             else
                 echo "$chncharline" >> $unicodetable".syy"
             fi
         elif [[ "$chnchar" = "null" ]]; then
-			echo "$(date +'%Y-%m-%d %H:%M:%S') Decode failed($uchar), there is not this character's code in unicodetable."
+			echo "`date +'%Y-%m-%d %H:%M:%S'` Decode failed($uchar), there is not this character's code in unicodetable."
 			return 1
 		fi
 		response_str=${response_str//"$uchar"/"$chnchar"}
@@ -711,7 +710,7 @@ uploadPath() {
         if [[ -d "$1/$lfn" ]]; then
             uploadPath "$1/$lfn" "$2/$lfn"
         else
-            local lmeta=($(ls -l --time-style=+"%s" "$1/$lfn" | awk '{print $6"\n"$5}'))
+            local lmeta=$(ls -l --time-style=+"%s" "$1/$lfn" | awk '{print $6"\n"$5}')
             local fnmd5=$(echo  "${1:$basedirlen}/$lfn" | md5sum | cut -d ' ' -f1)
             checkSyncStatus "*" "${lmeta[0]}" "${lmeta[1]}" "$fnmd5"
             if [[ $? -eq 0 ]]; then
@@ -739,7 +738,7 @@ uploadPathPlus() {
     getPcsFileList "$2" "$startIdx" "$listNum"
     local result=$?
 	[[ $result -ne 0 && $errcode -ne 31066 ]] && return 1
-    local lfnlist=($(ls -1 "$1"))
+    local lfnlist=$(ls -1 "$1")
 	local rfn=
 	local idx=
     while [[ $result -eq 0 ]]; do
@@ -769,12 +768,12 @@ uploadPathPlus() {
                         local fnnametmp="${fnname%.*}""_old_""$(date +'%Y%m%d%H%M%S')"".""${fnname##*.}"
                     fi
                     if [[ $((${#2} + ${#fnnametmp})) -ge 999 ]]; then
-						echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Rename faild, the length of PCS path($2/$fnname) must less than 1000, skip upload \"$1/$fnname\"." >> $syncyerrlog
+						echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Rename faild, the length of PCS path($2/$fnname) must less than 1000, skip upload \"$1/$fnname\"." >> $syncyerrlog
                         continue
                     fi
                     movePcsFile "$2/$fnname" "$2/$fnnametmp"
                     if [[ $? -eq 1 ]]; then
-                        echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Rename \"$2/$fnname\" failed, skip upload \"$1/$fnname\"." >> $syncyerrlog
+                        echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Rename \"$2/$fnname\" failed, skip upload \"$1/$fnname\"." >> $syncyerrlog
                         continue
                     fi
                 else
@@ -784,7 +783,7 @@ uploadPathPlus() {
 					uploadPathPlus "$1/$fnname" "$2/$fnname"
 					continue
 				else
-					local lmeta=($(ls -l --time-style=+"%s" "$1/$fnname" | awk '{print $6"\n"$5}'))
+					local lmeta=$(ls -l --time-style=+"%s" "$1/$fnname" | awk '{print $6"\n"$5}')
 					local fnmd5=$(echo  "${1:$basedirlen}/$fnname" | md5sum | cut -d ' ' -f1)
                     rapidUploadFile2Pcs "$1/$fnname" "${lmeta[0]}" "${lmeta[1]}" "$2/$fnname" "$fnmd5" "overwrite"
 				fi
@@ -792,7 +791,7 @@ uploadPathPlus() {
 				uploadPathPlus "$1/$fnname" "$2/$fnname"
 				continue
             else
-                local lmeta=($(ls -l --time-style=+"%s" "$1/$fnname" | awk '{print $6"\n"$5}'))
+                local lmeta=$(ls -l --time-style=+"%s" "$1/$fnname" | awk '{print $6"\n"$5}')
                 local fnmd5=$(echo  "${1:$basedirlen}/$fnname" | md5sum | cut -d ' ' -f1)
                 local rmd5=$(echo "$rfn" | sed -rn 's/.*\"md5\":\"([^"]+)\".*/\1/p')
                 local rsize=$(echo "$rfn" | sed -rn 's/.*\"size\":([0-9]+),.*/\1/p')
@@ -807,12 +806,12 @@ uploadPathPlus() {
                         local fnnametmp="${fnname%.*}""_old_""$(date +'%Y%m%d%H%M%S')"".""${fnname##*.}"
                     fi
                     if [[ $((${#2} + ${#fnnametmp})) -ge 999 ]]; then
-						echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Rename faild, the length of PCS path($2/$fnname) must less than 1000, skip upload \"$1/$fnname\"." >> $syncyerrlog
+						echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Rename faild, the length of PCS path($2/$fnname) must less than 1000, skip upload \"$1/$fnname\"." >> $syncyerrlog
                         continue
                     fi
                     movePcsFile "$2/$fnname" "$2/$fnnametmp"
                     if [[ $? -eq 1 ]]; then
-                        echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Rename \"$2/$fnname\" failed, skip upload \"$1/$fnname\"." >> $syncyerrlog
+                        echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Rename \"$2/$fnname\" failed, skip upload \"$1/$fnname\"." >> $syncyerrlog
                         continue
                     fi
                 else
@@ -849,7 +848,7 @@ uploadPathPlus() {
         if [[ -d "$1/${lfnlist[$idx]}" ]]; then
             uploadPathPlus "$1/${lfnlist[$idx]}" "$2/${lfnlist[$idx]}"
         elif [[ -f "$1/${lfnlist[$idx]}" ]]; then
-			local lmeta=($(ls -l --time-style=+"%s" "$1/${lfnlist[$idx]}" | awk '{print $6"\n"$5}'))
+			local lmeta=$(ls -l --time-style=+"%s" "$1/${lfnlist[$idx]}" | awk '{print $6"\n"$5}')
             local fnmd5=$(echo  "${1:$basedirlen}/${lfnlist[$idx]}" | md5sum | cut -d ' ' -f1)
             if [[ -e "$1/${lfnlist[$idx]}.tmp.syy" ]]; then
 				burstUploadFile2Pcs "$1/${lfnlist[$idx]}" "${lmeta[0]}" "${lmeta[1]}" "$2/${lfnlist[$idx]}" "$fnmd5" "overwrite"
@@ -969,7 +968,7 @@ downloadPathPlus() {
                 if [[ -e "$1/$fnname.tmp.syy" ]]; then
                     downloadPcsFile "$2/$fnname" "$rmd5" "$rsize" "$1/$fnname" "$fnmd5"
                 elif [[ -e "$1/$fnname" ]]; then
-                    local lmeta=($(ls -l --time-style=+"%s" "$1/$fnname" | awk '{print $6"\n"$5}'))
+                    local lmeta=$(ls -l --time-style=+"%s" "$1/$fnname" | awk '{print $6"\n"$5}')
                     checkSyncStatus "$rmd5" "${lmeta[0]}" "${lmeta[1]}" "$fnmd5"
                     [[ $? -eq 1 ]] && continue
                     if [[ "$ondup" = "rename" ]]; then
@@ -1007,7 +1006,7 @@ syncPath() {
     getPcsFileList "$2" "$startIdx" "$listNum"
     local result=$?
     [[ $result -ne 0 && $errcode -ne 31066 ]] && return 1
-	local lfnlist=($(ls -1 "$1"))
+	local lfnlist=$(ls -1 "$1")
 	local idx=
 	local rfn=
     while [[ $result -eq 0 ]]; do
@@ -1031,7 +1030,7 @@ syncPath() {
             if [[ $isdir = 1 ]]; then
                 if [[ -e "$1/$fnname" && -f "$1/$fnname" ]]; then
 					local fnmd5=$(echo  "${1:$basedirlen}/$fnname" | md5sum | cut -d ' ' -f1)
-                    local lmeta=($(ls -l --time-style=+"%s" "$1/$fnname" | awk '{print $6"\n"$5}'))
+                    local lmeta=$(ls -l --time-style=+"%s" "$1/$fnname" | awk '{print $6"\n"$5}')
                     checkSyncStatus "*" "${lmeta[0]}" "${lmeta[1]}" "$fnmd5"
                     if [[ $? -eq 1 ]]; then
                         rm -f "$1/$fnname"
@@ -1082,7 +1081,7 @@ syncPath() {
 						fi
 					fi
                 elif [[ -e "$1/$fnname" ]]; then
-                    local lmeta=($(ls -l --time-style=+"%s" "$1/$fnname" | awk '{print $6"\n"$5}'))
+                    local lmeta=$(ls -l --time-style=+"%s" "$1/$fnname" | awk '{print $6"\n"$5}')
                     if [[ $rsize -eq ${lmeta[1]} ]]; then
 						checkSyncStatus "$rmd5" "${lmeta[0]}" "${lmeta[1]}" "$fnmd5"
 						[[ $? -eq 1 ]] && continue
@@ -1157,7 +1156,7 @@ syncPath() {
             syncPath "$1/${lfnlist[$idx]}" "$2/${lfnlist[$idx]}"
 			[[ $(ls -1 "$1/${lfnlist[$idx]}" | wc -l) -eq 0 ]] && rm -rf "$1/${lfnlist[$idx]}"
         elif [[ -f "$1/${lfnlist[$idx]}" ]]; then
-            local lmeta=($(ls -l --time-style=+"%s" "$1/${lfnlist[$idx]}" | awk '{print $6"\n"$5}'))
+            local lmeta=$(ls -l --time-style=+"%s" "$1/${lfnlist[$idx]}" | awk '{print $6"\n"$5}')
             local fnmd5=$(echo  "${1:$basedirlen}/${lfnlist[$idx]}" | md5sum | cut -d ' ' -f1)
 			checkSyncStatus "*" "${lmeta[0]}" "${lmeta[1]}" "$fnmd5"
 			if [[ $? -eq 1 ]];then
@@ -1189,24 +1188,24 @@ startSync() {
 		synccount=0
 		failcount=0
 		errorcount=0
-		echo "$(date +'%Y-%m-%d %H:%M:%S') Start sync path: \"$ipath\"."
+		echo "`date +'%Y-%m-%d %H:%M:%S'` Start sync path: \"$ipath\"."
         local localdir=$(echo "$ipath" | cut -d ':' -f1)
         local remotedir=$(echo "$ipath" | cut -d ':' -f2)
         local synctype=$(echo "$ipath" | cut -d ':' -f3)
         local ckresult=$(echo "$pcsroot$remotedir" | sed -rn 's/^((\/[^/<>\|*?:" .\r\n\t]{1}[^/<>\|*?:"]+[^/<>\|*?:" .\r\n\t]{1})+)$/\1/p')
 		local cklresult=$(echo "$localdir" | sed -rn 's/^((\/[^/<>\|*?:" .\r\n\t]{1}[^/<>\|*?:"]+[^/<>\|*?:" .\r\n\t]{1})+)$/\1/p')
         if [[ -z $ckresult || $ckresult != "$pcsroot$remotedir" ]]; then
-            echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Sync \"$ipath\" failed, remote directory error." >> $syncyerrlog
+            echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Sync \"$ipath\" failed, remote directory error." >> $syncyerrlog
             continue
         fi
         if [[ -z $cklresult || $cklresult != "$localdir" ]]; then
-            echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Sync \"$ipath\" failed, local directory error." >> $syncyerrlog
+            echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Sync \"$ipath\" failed, local directory error." >> $syncyerrlog
             continue
         fi
         if [[ -n "$localdir" && -d "$localdir" ]]; then
             syncydb="$localdir/.syncy.info.db"
 			[[ ! -e "$syncydb" ]] && touch "$syncydb"
-            [[ $bufferMemory = "on" ]] && syncInfo=($(cat $syncydb))
+            [[ $bufferMemory = "on" ]] && syncInfo=$(cat $syncydb)
 			basedirlen=${#localdir}
 			case "$synctype" in
                 "0"|"u"|"U"|"upload")
@@ -1236,13 +1235,13 @@ startSync() {
             esac
 			basedirlen=0
         else
-            echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Sync \"$ipath\" failed, local directory is not exist or is normal file." >> $syncyerrlog
+            echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Sync \"$ipath\" failed, local directory is not exist or is normal file." >> $syncyerrlog
         fi
 		if [[ $failcount -eq 0 && $errorcount -eq 0 ]]; then
-			echo "$(date +'%Y-%m-%d %H:%M:%S') Sync path: \"$ipath\" complete, Success sync $synccount files."
+			echo "`date +'%Y-%m-%d %H:%M:%S'` Sync path: \"$ipath\" complete, Success sync $synccount files."
 		else
-			echo "$(date +'%Y-%m-%d %H:%M:%S') Sync path: \"$ipath\" failed, $synccount files success,$failcount files failed,$errorcount errors occurred."
-			echo "ERROR($(date +'%Y-%m-%d %H:%M:%S')): Sync path: \"$ipath\" failed, $synccount files success,$failcount files failed,$errorcount errors occurred." >> $syncyerrlog
+			echo "`date +'%Y-%m-%d %H:%M:%S'` Sync path: \"$ipath\" failed, $synccount files success,$failcount files failed,$errorcount errors occurred."
+			echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Sync path: \"$ipath\" failed, $synccount files success,$failcount files failed,$errorcount errors occurred." >> $syncyerrlog
 		fi
 	done
     save_value synctotal $synctotal

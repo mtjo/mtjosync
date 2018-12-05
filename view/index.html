@@ -303,7 +303,7 @@
                         var response = jQuery.parseJSON(data);
                         if (response.code != 0) {
                             //console.log(data);
-                            if (response.code == 2502) {
+                            if (response.code == 2502 && router_app.$data.refresh_token !="") {
                                 pluginControlError(response);
                             }
                             //alert(data);
@@ -323,7 +323,7 @@
                         }
                     },
                     error: function (data) {
-                        alert(method + ":" + data);
+                        alert("getQuota" + ":" + data);
                     }
                 });
             },
@@ -645,7 +645,7 @@
                 //toast(data)
             },
             error: function (data) {
-                alert("plugin_enable:" + data);
+                //alert("plugin_enable:" + data);
             }
         });
     }
