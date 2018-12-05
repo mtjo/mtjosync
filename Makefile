@@ -15,7 +15,7 @@ LDFLAGS = -Wall -O2 -lxmrouter -lthrift -lssl -lcrypto -lconfig++ -ljson-c \
 
 dir : 
 	mkdir -p $(BUILDDIR)
-
+	mkdir -p $(BUILDDIR)bin
 sync :
 	$(CXX) $(CXXFLAGS)  JSON.cpp Tools.cpp inifile.c BaiduPcsSync.cpp $(LIB_DIR) $(LDFLAGS) -o $(BINARY)
 	
@@ -26,4 +26,5 @@ clean:
 
 package: 
 	cp start_script build/
+	cp -rf bin/* build/bin/
 	../plugin_packager_x64

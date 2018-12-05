@@ -42,8 +42,8 @@
                 <table width="100%">
                     <tr>
                         <td><font colour="#FFFFFF">插件状态</font></td>
-                        <td align="right"><input width="150" v-model="run_status"
-                                                 @click="pluginEnable(run_status)"
+                        <td align="right"><input width="150" v-model="runStatus"
+                                                 @click="syncEnable(runStatus)"
                                                  class="mui-switch mui-switch-anim" type="checkbox"></td>
                     </tr>
                 </table>
@@ -76,8 +76,11 @@
                                 <tr style="width: 20%">
                                     <td class="text_right">绑定状态：</td>
                                     <td>
-                                        <input v-if="quota=='0000.00'" type="button" @click="bindPcs" value="绑定百度云"/>
                                         <span v-if="quota>0">已绑定</span>
+                                        <input v-if="quota=='0000.00'" type="button" @click="bindPcs" value="绑定百度云"/>
+
+                                        <input v-if="quota>0" type="button" onclick="refresh_access_token()"
+                                               value="刷新"/>
                                     </td>
                                 </tr>
                                 <tr style="width: 20%">
@@ -98,6 +101,8 @@
                             同步说明
                             <div class="list-block" style="padding: 20px;">
 
+                                refresh_token:{{refresh_token}}<br/>
+                                access_token:{{access_token}}<br/>
 
                                 [上传]:<br/> 只检查本地文件并上传修改过的文件，忽略远端的所有修改或删除，远端删除的也不再上传<br/>
                                 [上传+]:<br/>
@@ -229,13 +234,40 @@
             syncList: [],
             quota: "0000.00",
             used: "0000.00",
-            run_status: false,
+            runStatus: false,
             startX: 0,
             endX: 0,
             shellLog: '',
+            refresh_token: '',
+            access_token: '',
             shell: ''
+
         },
         methods: {
+            syncEnable: function (runStatus) {
+                routerRequest.request({
+                    path: "/api-third-party/service/datacenter/set_config",
+                    type: "GET",
+                    data: {
+                        appId: appId,
+                        key: "runStatus",
+                        value: runStatus
+                    },
+                    success: function (data) {
+                        var response = jQuery.parseJSON(data);
+                        if (response.code != 0) {
+                            console.log(data);
+                            toast("错误：" + response.msg);
+                            return;
+                        }
+                        toast(data);
+                    },
+                    error: function (data) {
+                        toast("网络错误：" + data);
+                    }
+                });
+            },
+
             showDeviceid: function () {
                 routerRequest.request({
                     path: "/api-third-party/device",
@@ -271,7 +303,11 @@
                         var response = jQuery.parseJSON(data);
                         if (response.code != 0) {
                             //console.log(data);
-                            toast("错误：" + response.msg);
+                            if (response.code == 2502) {
+                                pluginControlError(response);
+                            }
+                            //alert(data);
+                            //toast("错误：" + response.msg);
                             return;
                         }
                         //alert(data);
@@ -279,7 +315,6 @@
                             router_app.$data.quota = response.data.quota / 1024 / 1024 / 1024;
                             router_app.$data.quota = router_app.$data.quota.toFixed(2);
                         }
-
 
                         if (response.data.used > 0) {
                             router_app.$data.used = response.data.used / 1024 / 1024 / 1024;
@@ -408,12 +443,34 @@
                 routerRequest.authorize(window.location.href, appId);
             }
         });
-        loadconfig();
+        loadConfig();
         router_app.getQuota();
 
     });
 
-    function loadconfig() {
+    function loadConfig() {
+
+        routerRequest.request({
+            path: "/api-third-party/service/datacenter/config_info",
+            type: "GET",
+            data: {
+                appId: appId,
+                key: "runStatus"
+            },
+            success: function (data) {
+                //alert(data)
+                var response = jQuery.parseJSON(data);
+                if (response.code != 0) {
+                    toast("错误：" + response.msg);
+                    return;
+                }
+                router_app.$data.runStatus = response.value == "true";
+            },
+            error: function (data) {
+                toast("错误：" + data);
+            }
+        });
+
         //设置
         routerRequest.request({
             path: "/api-third-party/service/datacenter/config_info",
@@ -456,6 +513,12 @@
                     return;
                 }
                 jsonstr = decodeURIComponent(response.value);
+                //alert(jsonstr);
+                configData = JSON.parse(jsonstr);
+                if (configData != null) {
+                    router_app.$data.access_token = configData.access_token;
+                    router_app.$data.refresh_token = configData.refresh_token;
+                }
 
             },
             error: function (data) {
@@ -489,9 +552,10 @@
     if (code.length > 0) {
         $.get('/baiduSync/oauth.php', {method: "getPcsToken", code: code}, function (token) {
                 console.log(token);
-                //alert(token);
+                alert(token.toString());
                 access_token = token.access_token;
 
+                router_app.$data.access_token = access_token;
                 routerRequest.request({
                     path: "/api-third-party/service/datacenter/set_config",
                     type: "GET",
@@ -514,7 +578,7 @@
 
 
                 refresh_token = token.refresh_token;
-
+                router_app.$data.refresh_token = refresh_token;
 
                 routerRequest.request({
                     path: "/api-third-party/service/datacenter/set_config",
@@ -563,6 +627,150 @@
             "json");
     }
 
+    //开启插件
+    function pluginEnable() {
+        routerRequest.request({
+            path: "/api-third-party/service/datacenter/plugin_enable",
+            type: "GET",
+            data: {
+                appId: appId
+            },
+            success: function (data) {
+                var response = jQuery.parseJSON(data);
+                if (response.code != 0) {
+                    console.log(data);
+                    toast("启动插件错误：" + response.msg);
+                    return;
+                }
+                //toast(data)
+            },
+            error: function (data) {
+                alert("plugin_enable:" + data);
+            }
+        });
+    }
+
+    //关闭插件
+    function pluginDisable() {
+        routerRequest.request({
+            path: "/api-third-party/service/datacenter/plugin_disable",
+            type: "GET",
+            data: {
+                appId: appId
+            },
+            success: function (data) {
+                var response = jQuery.parseJSON(data);
+                if (response.code != 0) {
+                    console.log(data);
+                    toast("关闭插件错误：" + response.msg);
+                    return;
+                }
+                //toast(data)
+            },
+            error: function (data) {
+                alert("plugin_disable:" + data);
+            }
+        });
+    }
+
+    //获取插件开启关闭状态
+    function getPluginStatus() {
+        routerRequest.request({
+            path: "/api-third-party/service/datacenter/get_plugin_status",
+            type: "GET",
+            data: {
+                appId: appId
+            },
+            success: function (data) {
+                var response = jQuery.parseJSON(data);
+                if (response.code != 0) {
+                    console.log(data);
+                    toast("获取插件开启关闭状态错误：" + response.msg);
+                    return;
+                }
+                //toast(data)
+                return response.isEnable;
+            },
+            error: function (data) {
+                alert("plugin_control:" + data);
+            }
+        });
+    }
+
+
+    function runCommand(command) {
+        //插件状态
+        routerRequest.request({
+            path: "/api-third-party/service/datacenter/plugin_control",
+            type: "GET",
+            data: {
+                appId: appId,
+                info: JSON.stringify({method: "runCommand", command: command})
+            },
+            success: function (data) {
+
+                var response = jQuery.parseJSON(data);
+                if (response.code != 0) {
+                    console.log(data);
+                    toast("runCommand错误：" + response.msg);
+                    return;
+                }
+                alert(response.data)
+
+
+            },
+            error: function (data) {
+                alert("plugin_control:" + data);
+            }
+        });
+
+    }
+
+
+    //获取路由器信息
+    function getRouterInfo() {
+        routerRequest.request({
+            path: "/api-third-party/service/datacenter/get_router_info",
+            type: "GET",
+            data: {
+                appId: appId
+            },
+            success: function (data) {
+                var response = jQuery.parseJSON(data);
+                if (response.code != 0) {
+                    console.log(data);
+                    toast("获取路由器信息错误：" + response.msg);
+                    return;
+                }
+                //alert(data)
+                router_app.version = response.version;
+                router_app.type = response.type;
+                router_app.name = response.name;
+            },
+            error: function (data) {
+                alert("plugin_control:" + data);
+            }
+        });
+    }
+
+    function refresh_access_token() {
+        $.get('/baiduSync/oauth.php',
+            {method: "refresh_access_token", refresh_token: router_app.$data.refresh_token},
+            function (token) {
+                //console.log(token);
+                alert(token);
+            },
+            "text");
+
+    }
+
+    function pluginControlError(data) {
+        pluginDisable();
+        pluginEnable();
+        setTimeout(function () {
+            router_app.getQuota();
+        }, 1000);
+    }
 
     function toast(msg) {
         //setTimeout(function () {
