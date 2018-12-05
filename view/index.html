@@ -101,8 +101,8 @@
                             同步说明
                             <div class="list-block" style="padding: 20px;">
 
-                                refresh_token:{{refresh_token}}<br/>
-                                access_token:{{access_token}}<br/>
+                                <!--refresh_token:{{refresh_token}}<br/>-->
+                                <!--access_token:{{access_token}}<br/>-->
 
                                 [上传]:<br/> 只检查本地文件并上传修改过的文件，忽略远端的所有修改或删除，远端删除的也不再上传<br/>
                                 [上传+]:<br/>
@@ -238,6 +238,7 @@
             startX: 0,
             endX: 0,
             shellLog: '',
+            pcsConfig: {},
             refresh_token: '',
             access_token: '',
             shell: ''
@@ -303,7 +304,7 @@
                         var response = jQuery.parseJSON(data);
                         if (response.code != 0) {
                             //console.log(data);
-                            if (response.code == 2502 && router_app.$data.refresh_token !="") {
+                            if (response.code == 2502) {
                                 pluginControlError(response);
                             }
                             //alert(data);
@@ -444,8 +445,11 @@
             }
         });
         loadConfig();
-        router_app.getQuota();
-
+        setTimeout(function () {
+            if (router_app.$data.pcsConfig.access_token!="") {
+                router_app.getQuota();
+            }
+        },500);
     });
 
     function loadConfig() {
@@ -513,11 +517,12 @@
                     return;
                 }
                 jsonstr = decodeURIComponent(response.value);
-                //alert(jsonstr);
-                configData = JSON.parse(jsonstr);
-                if (configData != null) {
-                    router_app.$data.access_token = configData.access_token;
-                    router_app.$data.refresh_token = configData.refresh_token;
+
+                router_app.$data.pcsConfig = JSON.parse(jsonstr);
+                if (router_app.$data.pcsConfig != null) {
+                    //alert(router_app.$data.pcsConfig.access_token);
+                    router_app.$data.access_token = router_app.$data.pcsConfig.access_token;
+                    router_app.$data.refresh_token = router_app.$data.pcsConfig.refresh_token;
                 }
 
             },
@@ -552,17 +557,17 @@
     if (code.length > 0) {
         $.get('/baiduSync/oauth.php', {method: "getPcsToken", code: code}, function (token) {
                 console.log(token);
-                alert(token.toString());
-                access_token = token.access_token;
+                pcsConfig = token;
 
-                router_app.$data.access_token = access_token;
+                router_app.$data.access_token = token.access_token;
+
                 routerRequest.request({
                     path: "/api-third-party/service/datacenter/set_config",
                     type: "GET",
                     data: {
                         appId: appId,
                         key: "accessToken",
-                        value: access_token
+                        value: router_app.$data.access_token
                     },
                     success: function (data) {
                         var response = jQuery.parseJSON(data);
@@ -577,8 +582,7 @@
                 });
 
 
-                refresh_token = token.refresh_token;
-                router_app.$data.refresh_token = refresh_token;
+                router_app.$data.refresh_token  = token.refresh_token;
 
                 routerRequest.request({
                     path: "/api-third-party/service/datacenter/set_config",
@@ -586,7 +590,7 @@
                     data: {
                         appId: appId,
                         key: "refreshToken",
-                        value: refresh_token
+                        value: router_app.$data.refresh_token
                     },
                     success: function (data) {
                         var response = jQuery.parseJSON(data);
@@ -600,8 +604,8 @@
                     }
                 });
 
-                encodetoken = encodeURIComponent(token);
-                userconfig = jQuery.parseJSON(token);
+                encodetoken = encodeURIComponent(JSON.stringify(token));
+                alert(encodetoken);
                 //token 存到小米配置
                 routerRequest.request({
                     path: "/api-third-party/service/datacenter/set_config",
