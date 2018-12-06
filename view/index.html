@@ -41,7 +41,12 @@
             <div class="navbar-inner">
                 <table width="100%">
                     <tr>
-                        <td><font colour="#FFFFFF">插件状态</font></td>
+                        <td><font colour="#FFFFFF">插件状态</font>
+                            <div style="display: inline-block; line-height: 100%;"><font size="1px" color="#d3d3d3">总容量：<font color="#00FF00">{{quota}}GB</font><br/>
+                                已使用：<font color="#FF0000">{{used}}GB</font>
+                            </font></div>
+
+                        </td>
                         <td align="right"><input width="150" v-model="runStatus"
                                                  @click="syncEnable(runStatus)"
                                                  class="mui-switch mui-switch-anim" type="checkbox"></td>
@@ -73,7 +78,7 @@
 
 
                             <table align="center" style="width: 90%">
-                                <tr style="width: 20%">
+                                <tr >
                                     <td class="text_right">绑定状态：</td>
                                     <td>
                                         <span v-if="quota>0">已绑定</span>
@@ -83,7 +88,7 @@
                                                value="刷新"/>
                                     </td>
                                 </tr>
-                                <tr style="width: 20%">
+                                <tr >
                                     <td class="text_right">总容量：</td>
                                     <td><font color="#00FF00">{{quota}}GB</font>
 
@@ -97,6 +102,78 @@
                             </table>
                             <br/>
                             <hr/>
+
+
+                            基本设置
+                            <hr/>
+
+
+                            <table align="center" style="width: 90%">
+                                <tr >
+                                    <td class="text_right">分片上传的块：</td>
+                                    <td>
+                                        <input type="text" v-model="syncConfig.burstblocksize"/>
+                                    </td>
+                                </tr>
+                                <tr >
+                                    <td class="text_right">分片下载的块：</td>
+                                    <td>
+                                        <input type="text" v-model="syncConfig.dlblocksize"/>
+                                    </td>
+                                </tr>
+                                <tr >
+                                    <td class="text_right">存在重名文件时：</td>
+                                    <td>
+                                        <select  v-model="syncConfig.ondup">
+                                                <option value="overwrite">覆盖</option>
+                                                <option value="rename">重命名</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr >
+                                    <td class="text_right">临时文件目录：</td>
+                                    <td>
+                                        <input type="text" v-model="syncConfig.tmpdir"/>
+                                    </td>
+                                </tr>
+                                <tr >
+                                    <td class="text_right">排除文件(夹)：</td>
+                                    <td>
+                                        <input type="text" v-model="syncConfig.eliminate_files"/>
+                                    </td>
+                                </tr>
+                                <tr >
+                                    <td class="text_right">bufferMemory：</td>
+                                    <td>
+                                        <select  v-model="syncConfig.bufferMemory">
+                                            <option value="on">开</option>
+                                            <option value="off">关</option>
+                                        </select>
+                                    </td>
+                                </tr>
+                                <tr >
+                                    <td class="text_right">listNum：</td>
+                                    <td>
+                                        <input type="text" v-model="syncConfig.listNum"/>
+                                    </td>
+                                </tr>
+                                <tr >
+                                    <td class="text_right">错误重试次数：</td>
+                                    <td>
+                                        <input type="text" v-model="syncConfig.retrytimes"/>
+                                    </td>
+                                </tr>
+                                <tr >
+                                    <td class="text_right">重试延时（秒）：</td>
+                                    <td>
+                                        <input type="text" v-model="syncConfig.retrydelay"/>
+                                    </td>
+                                </tr>
+                            </table>
+                            <br/>
+                            <hr/>
+
+
 
                             同步说明
                             <div class="list-block" style="padding: 20px;">
@@ -230,7 +307,28 @@
             tabsParam: ['基本配置', '同步列表', "?"],//（这个也可以用对象key，value来实现）
             nowIndex: 0,//默认激活状态
             user_config: "",
-            plugin_status: {},
+            syncConfig: {
+                syncyerrlog:'./log/syncYerr.log',
+                unicodetable:'./res/unicodetable.txt',
+                syncpath:'/userdisk/appdata/2882303761517489490/etc:/etc:4',
+                burstblocksize:10,
+                dlblocksize:4,
+                ondup:'overwrite',
+                tmpdir:'/tmp',
+                bufferMemory:'on',
+                eliminate_files:'*/Thumbs.db',
+                listNum:50,
+                retrytimes:3,
+                retrydelay:3,
+                cfgver:'1.0.0',
+                device_code:'',
+                refresh_token:'',
+                access_token:'',
+                expires_in:'',
+                refresh_date:'',
+                compress_date:'',
+                synctotal:0,
+            },
             syncList: [],
             quota: "0000.00",
             used: "0000.00",
@@ -241,7 +339,6 @@
             pcsConfig: {},
             refresh_token: '',
             access_token: '',
-            shell: ''
 
         },
         methods: {
