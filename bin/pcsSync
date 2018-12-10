@@ -570,13 +570,30 @@ checkAndCreatePCSdir() {
 	return 0
 }
 compressData() {
+    echo "compressData";
     local fn=
 	local idx=
+	echo $@
 	for fn in $(filetimestamp "$1" | awk '{for (i=1; i<5; i++){$i=""} print $0}'); do
 		[[ ${#fn} -lt 10 ]] && continue
 		fn=${fn#"    "}
-		fn=${fn/" "/$'\n'}
-		fn=${fn/" "/$'\n'}
+ 		#fn=${fn/" "/$'\n'}
+		#fn=${fn/" "/$'\n'}
+
+		fn_tmp=$fn;
+		echo $fn;
+
+		i=0;
+        for idx in $fn_tmp; do
+        	fn[$i]="$idx"
+           	i=`expr $i + 1`;
+        done
+        echo $(fn[@]);
+        echo $(fn[0]);
+        echo $(fn[1]);
+        echo $(fn[2]);
+        exit;
+
         if [[ -d "$1/$(fn[2])" ]]; then
             compressData "$1/$(fn[2])"
         elif [[ $bufferMemory = "on" ]]; then
@@ -597,12 +614,14 @@ compressData() {
 	return 0
 }
 startCompress() {
+	echo "startCompress";
     if [[ $# -eq 0 ]]; then
 		local mpath=$syncpath
 		echo "`date +'%Y-%m-%d %H:%M:%S'` Start compress sync data."
 	else
 		local mpath=$1
     fi
+    echo $mpath;
 	local ipath=
 	for ipath in ${mpath//;/$'\n'}
 	do
@@ -742,11 +761,22 @@ uploadPath() {
     done
 }
 uploadPathPlus() {
+    echo "uploadPathPlus";
+    echo $@;
     local startIdx=0
     getPcsFileList "$2" "$startIdx" "$listNum"
     local result=$?
+    echo $result;
 	[[ $result -ne 0 && $errcode -ne 31066 ]] && return 1
     local lfnlist=$(ls -1 "$1")
+    lfnlist_tmp= $lfnlist;
+    i=0;
+    for idx in $lfnlist; do
+        lfnlist[$i]="$idx"
+        eval lfnlist$i="$idx"
+        i=`expr $i + 1`;
+    done
+
 	local rfn=
 	local idx=
     while [[ $result -eq 0 ]]; do
@@ -1258,14 +1288,22 @@ startSync() {
 
 initSyncy() {
 
-    eliminate_files=${eliminate_files//;/$'\n'}
+    eliminate_files=\(${eliminate_files//;/$'\n'}\)
 	eliminate_files=${eliminate_files//'.'/'\.'}
     eliminate_files=${eliminate_files//'*'/'.*'}
     eliminate_files=${eliminate_files//'?'/'.?'}
 	local idx=
-	for idx in $(!eliminate_files[@]); do
-        eliminate_files[$idx]='^'"$(eliminate_files[$idx])"'$'
-	done
+	echo $eliminate_files;
+	tmp=$eliminate_files;
+	i=0;
+    for idx in $tmp; do
+    	$eliminate_files[$i]='^'"$idx"'$'
+       	i=`expr $i + 1`;
+    done
+	echo $eliminate_files
+	 for idx in $(!eliminate_files[@]); do
+         eliminate_files[$idx]='^'"$(eliminate_files[$idx])"'$'
+	 done
 }
 testChinese() {
     response_str="\u4e2d\u6587\u8f6c\u7801\u6d4b\u8bd5"
