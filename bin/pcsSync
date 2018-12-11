@@ -13,6 +13,7 @@ VERSION="1.0.5"
 #  don't modify pcsroot value.
 pcsroot="/apps/mtjo"
 _init() {
+    echo "_init pcs"
 	if ! type curl >/dev/null 2>&1 ; then
 		echo "ERROR: The system must be installed curl!"
 		exit 1
@@ -62,6 +63,7 @@ _init() {
 		save_value synctotal $synctotal
 		echo "Get device token success."
 	fi
+
 	if [[ $((refresh_date + expires_in - 864000)) -le $(date +'%s') ]]; then
 		refresh_access_token
 	fi
@@ -103,8 +105,10 @@ checkUpdate() {
     fi
 }
 refresh_access_token() {
+    echo "refresh_access_token"
 	local response=$(curl -sLk --connect-timeout 10 "http://mtjo.net/baiduSync/oauth.php?method=refresh_access_token&refresh_token=$refresh_token")
 	local iserror=$(echo $response | sed -rn 's/.*\"(error).*/\1/p')
+	echo $response;
 	[[ -n "$iserror" ]] && echo "ERROR: \"$response\"." && return 1
 	refresh_token=$(echo $response | get_refresh_token)
 	access_token=$(echo $response | get_access_token)
@@ -1293,16 +1297,23 @@ initSyncy() {
     eliminate_files=${eliminate_files//'*'/'.*'}
     eliminate_files=${eliminate_files//'?'/'.?'}
 	local idx=
-	echo $eliminate_files;
 	tmp=$eliminate_files;
 	i=0;
+	 for index in 1 2 3 ; do
+        setvar myvar$index "Index: $index"
+        eval myothervar$index=\"Index: $index\"
+     done
+         for index in 1 2 3 ; do
+           eval echo \$myvar$index
+         done
+
     for idx in $tmp; do
-    	$eliminate_files[$i]='^'"$idx"'$'
+    	eliminate_files$i='^'"$idx"'$'
        	i=`expr $i + 1`;
     done
 	echo $eliminate_files
 	 for idx in $(!eliminate_files[@]); do
-         eliminate_files[$idx]='^'"$(eliminate_files[$idx])"'$'
+         eliminate_files$idx='^'"$(eliminate_files[$idx])"'$'
 	 done
 }
 testChinese() {
@@ -1315,7 +1326,9 @@ IFS=$'\n'
 if [[ "$1" = "compress" ]]; then
    startCompress
 elif [[ "$1" = "testchinese" ]]; then
-    testChinese "$2"
+       testChinese "$2"
+elif [[ "$1" = "config" ]]; then
+    save_value "$2" "$3"
 elif [[ $# -ne 0 && -f "$1" ]]; then
     local filename="${1##*/}"
 	mUpload2Pcs "$1" "$pcsroot$2/$filename"
