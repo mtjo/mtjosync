@@ -86,9 +86,11 @@ BaiduPcsSync::onParameterRecieved(const std::string &params) {
             std::string _key = key;
             std::string _value = json_object_get_string(value);
             std::string config_file = "/bin/syncy.conf";
-            std::string command = "grep " + _key + " " + config_file + ">/dev/null 2>&1 || { echo " + _key + "=" + _value + " >> "+config_file+"; }";
 
-            Tools::runCommand(command);
+            std::string hasSet = Tools::runCommand("grep " + _key + " " + config_file);
+            if(hasSet==""){
+                Tools::runCommand("echo " + _key + "=" + _value + " >> "+config_file);
+            }
             Tools::runCommand("sed -i 's/" + _key + "=.*/" + _key + "=" + _value + "/g' " + config_file);
 
             data.put(_key, "pcsSync config  " + _key + " " + _value);

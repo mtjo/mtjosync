@@ -84,6 +84,7 @@
                             基本设置 <span v-if="quota>0">已绑定</span>
                             <input v-if="quota=='0000.00'" type="button" @click="bindPcs" value="绑定百度云"/>
 
+                            <input v-if="quota>0" type="button" @click="bindPcs" value="重新绑定"/>
                             <input v-if="quota>0" type="button" onclick="refresh_access_token()"
                                    value="刷新"/>
                             <hr/>
@@ -305,8 +306,8 @@
                 refresh_token: '',
                 access_token: '',
                 expires_in: '',
-                refresh_date: '',
-                compress_date: '',
+                refresh_date: Math.round(new Date() / 1000),
+                compress_date:Math.round(new Date() / 1000),
                 synctotal: 0,
             },
             syncList: [],
@@ -421,8 +422,9 @@
                 location = 'http://mtjo.net/baiduSync/oauth.php?method=bindAccount&bindAccount=mtjo'
             },
             savePcsConfig: function () {
+                $.extend(router_app.$data.syncConfig, router_app.$data.pcsConfig);
+                configData = JSON.stringify(router_app.$data.syncConfig);
 
-                configData = JSON.stringify(router_app.$data.pcsConfig);
                 alert(configData);
 
                 routerRequest.request({
@@ -551,6 +553,7 @@
             }
         });
         loadConfig();
+        getDeviceInfo();
         setTimeout(function () {
             if (router_app.$data.pcsConfig.access_token != "") {
                 router_app.getQuota();
@@ -862,6 +865,31 @@
             }
         });
     }
+    //获取路由器信息
+    function getDeviceInfo() {
+        routerRequest.request({
+            path: "/api-third-party/device",
+            type: "GET",
+            data: {
+                appId: appId
+            },
+            success: function (data) {
+                var response = jQuery.parseJSON(data);
+                if (response.code != 0) {
+                    console.log(data);
+                    toast("获取路由器信息错误：" + response.msg);
+                    return;
+                }
+                //alert(data)
+                router_app.$data.syncConfig.device_code=response.device.id;
+            },
+            error: function (data) {
+                alert("plugin_control:" + data);
+            }
+        });
+    }
+
+
 
     function refresh_access_token() {
         $.get('/baiduSync/oauth.php',
