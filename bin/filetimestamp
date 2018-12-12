@@ -1,4 +1,5 @@
 #/bin/sh
+if [ -d $1 ]; then
 ls -l $1 | while read line
 do
     filename=`echo $line| awk '{print $9}'`
@@ -7,3 +8,12 @@ do
     #echo $timestamp
     echo $line| awk  '{print $1 " " $2 " " $3 " " $4 " "$5" "'$timestamp'"  "$9}'
 done
+fi
+
+if [ -f $1 ]; then
+    FILE="$1"
+    FILENAME="${FILE#*\/}";
+    timestamp=`date +%s -r $1`
+    ls -l $1 | awk  '{print $1 " " $2 " " $3 " " $4 " "$5" "'$timestamp'"  ""'$FILENAME'"}'
+fi
+

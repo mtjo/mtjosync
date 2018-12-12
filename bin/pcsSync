@@ -1,4 +1,4 @@
-#!/bin/sh
+#!/bin/ash
 #####################################################################################
 # Author: mtjo
 # Web Home: http://mtjo.net/
@@ -277,7 +277,7 @@ rapidUploadFile2Pcs() {
 }
 _init
 burstUploadFile2Pcs() {
-echo $@;
+    echo $@;
 	 if [[ $3 -le $(((burstblocksize + 1) * 1048576)) ]]; then
 	 	uploadFile2Pcs "$1" "$2" "$3" "$4" "$5" "$6"
 	 	return $?
@@ -540,34 +540,28 @@ compressData() {
 		fn=${fn#"    "}
  		#fn=${fn/" "/$'\n'}
 		#fn=${fn/" "/$'\n'}
+		fn0=`echo $fn|awk '{print $1}'`;
+		fn1=`echo $fn|awk '{print $2}'`;
+		fn2=`echo $fn|awk '{print $3}'`;
 
-		fn_tmp=$fn;
-		echo $fn;
+		echo $fn0
+		echo $fn1
+		echo $fn2
 
-		i=0;
-        for idx in $fn_tmp; do
-        	fn[$i]="$idx"
-           	i=`expr $i + 1`;
-        done
-        echo $(fn[@]);
-        echo $(fn[0]);
-        echo $(fn[1]);
-        echo $(fn[2]);
-        exit;
 
-        if [[ -d "$1/$(fn[2])" ]]; then
-            compressData "$1/$(fn[2])"
+        if [[ -d "$1/$fn2" ]]; then
+            compressData "$1/$fn2"
         elif [[ $bufferMemory = "on" ]]; then
-			local prk="$(fn[1]) $(fn[0]) "$(echo "$(1:$basedirlen)/$(fn[2])" | md5sum | cut -d ' ' -f1)
-			for idx in $(!syncInfo[@]); do
-                if [[ "$(syncInfo[$idx]:33)" = "$prk" ]]; then
-                    echo "$(syncInfo[$idx])" >> $syncydbtmp
+			local prk="$fn1 $fn0 "$(echo "$(1:$basedirlen)/$fn2)" | md5sum | cut -d ' ' -f1)
+			for idx in $syncInfo; do
+                if [[ "$idx:33)" = "$prk" ]]; then
+                    echo "$idx" >> $syncydbtmp
                     unset syncInfo[$idx]
                     break
                 fi
             done
         else
-            local prk="$(fn[1]) $(fn[0]) "$(echo "$(1:$basedirlen)/$(fn[2])" | md5sum | cut -d ' ' -f1)
+            local prk="$fn1 $fn0 "$(echo "$(1:$basedirlen)/$fn2" | md5sum | cut -d ' ' -f1)
             local syncl=$(grep ".* $prk$" $syncydb)
             [[ -n "$syncl" ]] && echo "$syncl" >> $syncydbtmp
         fi
@@ -613,8 +607,7 @@ checkEliminate() {
     echo "checkEliminate"
     [[ "${1:$((${#1}-8))}" = ".tmp.syy" ]] && return 1
 	local idx=
-	 echo "checkEliminate2"
-	 echo $eliminate_files;
+	#echo $eliminate_files;
 	for idx in $eliminate_files ; do
 		local elimi=$(echo "$1" | grep "$idx")
 		if [[ -n "$elimi" ]]; then
@@ -626,33 +619,29 @@ checkEliminate() {
 }
 checkSyncStatus() {
     echo "checkSyncStatus";
-    echo "$1";
-    echo "$2";
-    echo "$3";
-    echo "$4";
 	local idx=
     if [[ $bufferMemory = "on" ]]; then
-    echo $bufferMemory;
-    echo "syncInfo: " $syncInfo;
         if [[ "$1" = "*" ]]; then
             for idx in $syncInfo; do
-                local issync=$(echo $idx) | awk '{print $2" "$3" "$4}')
+                #echo $idx;
+                local issync=$(echo $idx | awk '{print $2" "$3" "$4}')
+                #echo $issync
 				if [[ "$issync" = "$2 $3 $4" ]]; then
-                    unset syncInfo[$idx]
+                    #unset syncInfo[$idx]
                     return 1
                 fi
             done
         elif [[ "$2" = "*" ]]; then
-            for idx in $(!syncInfo[@]); do
-                local issync=$(echo $(syncInfo[$idx]) | awk '{print $1" "$3" "$4}')
+            for idx in $syncInfo; do
+                local issync=$(echo $idx | awk '{print $1" "$3" "$4}')
                 if [[ "$issync" = "$1 $3 $4" ]]; then
                     unset syncInfo[$idx]
                     return 1
                 fi
             done
         else
-            for idx in $(!syncInfo[@]); do
-                if [[ "$(syncInfo[$idx])" = "$1 $2 $3 $4" ]]; then
+            for idx in $syncInfo; do
+                if [[ "$idx" = "$1 $2 $3 $4" ]]; then
                     unset syncInfo[$idx]
                     return 1
                 fi
@@ -703,7 +692,6 @@ uploadPath() {
     echo "uploadPath"
 	local lfn=
 	for lfn in $(ls -1 "$1"); do
-	    echo "lfn:"$lfn;
         checkEliminate "$1/$lfn"
         [[ $? = 1 ]] && continue
         checkPcsPath "$2" "$lfn"
@@ -712,29 +700,28 @@ uploadPath() {
         if [[ -d "$1/$lfn" ]]; then
             uploadPath "$1/$lfn" "$2/$lfn"
         else
-
-        echo "uploadPath2"
             local lmeta=$(filetimestamp "$1/$lfn" | awk '{print $6"\n"$5}')
             echo "lmeta: " $lmeta;
+            lmeta0=`echo $lmeta | awk '{print $1}'`
+            lmeta1=`echo $lmeta | awk '{print $2}'`
             local fnmd5=$(echo  "${1:$basedirlen}/$lfn" | md5sum | cut -d ' ' -f1)
             echo "fnmd5: " $fnmd5
-            #checkSyncStatus "*" "$(lmeta[0])" "$(lmeta[1])" "$fnmd5"
-            checkSyncStatus "*" $lmeta "$fnmd5"
+            checkSyncStatus "*" "$lmeta0" "$lmeta1" "$fnmd5"
             if [[ $? -eq 0 ]]; then
                 if [[ -e "$1/$lfn.tmp.syy" ]]; then
-					burstUploadFile2Pcs "$1/$lfn" "$(lmeta[0])" "$(lmeta[1])" "$2/$lfn" "$fnmd5" "${ondup/rename/newcopy}"
+					burstUploadFile2Pcs "$1/$lfn" "$lmeta0" "$lmeta1" "$2/$lfn" "$fnmd5" "${ondup/rename/newcopy}"
                 else
                     checkPcsPath "$2/$lfn"
 					if [[ $? -eq 0 ]]; then
-						rapidUploadFile2Pcs "$1/$lfn" "$(lmeta[0])" "$(lmeta[1])" "$2/$lfn" "$fnmd5" "${ondup/rename/newcopy}"
+						rapidUploadFile2Pcs "$1/$lfn" "$lmeta0" "$lmeta1" "$2/$lfn" "$fnmd5" "${ondup/rename/newcopy}"
 					else
 						continue
 					fi
                 fi
                 if [[ $? -eq 0 ]]; then
-                    synccount=$(synccount + 1)
+                    synccount=`expr $synccount + 1`
                 else
-                    failcount=$(failcount + 1)
+                    failcount=`expr $failcount + 1`
                 fi
             fi
         fi
@@ -749,14 +736,6 @@ uploadPathPlus() {
     echo $result;
 	[[ $result -ne 0 && $errcode -ne 31066 ]] && return 1
     local lfnlist=$(ls -1 "$1")
-    lfnlist_tmp= $lfnlist;
-    i=0;
-    for idx in $lfnlist; do
-        lfnlist[$i]="$idx"
-        eval lfnlist$i="$idx"
-        i=`expr $i + 1`;
-    done
-
 	local rfn=
 	local idx=
     while [[ $result -eq 0 ]]; do
@@ -768,8 +747,8 @@ uploadPathPlus() {
             checkEliminate "$1/$fnname"
             [[ $? = 1 ]] && continue
             if [[ -e "$1/$fnname" ]]; then
-                for idx in $(!lfnlist[@]}); do
-                    if [[ "$(lfnlist[$idx])" = "$fnname" ]]; then
+                for idx in $lfnlist; do
+                    if [[ "$idx)" = "$fnname" ]]; then
                         unset lfnlist[$idx]
                         break
                     fi
@@ -802,6 +781,9 @@ uploadPathPlus() {
 					continue
 				else
 					local lmeta=$(filetimestamp "$1/$fnname" | awk '{print $6"\n"$5}')
+					echo "lmeta: "$lmeta
+					lmeta0=`echo $lmeta | awk '{print $1}'`
+                    lmeta1=`echo $lmeta | awk '{print $2}'`
 					local fnmd5=$(echo  "${1:$basedirlen}/$fnname" | md5sum | cut -d ' ' -f1)
                     rapidUploadFile2Pcs "$1/$fnname" "$(lmeta[0])" "$(lmeta[1])" "$2/$fnname" "$fnmd5" "overwrite"
 				fi
