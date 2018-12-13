@@ -1,4 +1,4 @@
-#!/bin/ash
+#!/bin/sh
 #####################################################################################
 # Author: mtjo
 # Web Home: http://mtjo.net/
@@ -115,7 +115,7 @@ getPcsQuota() {
 		echo $response;
 		local iserror=$(echo $response | sed -rn 's/.*\"(error).*/\1/p')
 		if [[ -n "$iserror" || ${#response} -eq 0 ]]; then
-			retrycnt=$((retrycnt + 1))
+			retrycnt=`expr $retrycnt + 1`
 		else
 			break
 		fi
@@ -138,7 +138,7 @@ getPcsFileMeta() {
 		response_str=$(curl -X GET --retry $retrytimes -A '' -sLk "https://pcs.baidu.com/rest/2.0/pcs/file?method=meta&access_token=$access_token&path=$encoded_str")
 		local iserror=$(echo $response_str | sed -rn 's/.*\"(error).*/\1/p')
 		if [[ -n "$iserror" || ${#response_str} -eq 0 ]]; then
-			retrycnt=$((retrycnt + 1))
+			retrycnt=`expr $retrycnt + 1`
 		else
 			break
 		fi
@@ -148,28 +148,33 @@ getPcsFileMeta() {
 	return 0
 }
 getPcsFileList() {
+    echo "getPcsFileList:" $@;
 	unset errcode
     if [[ $# -ne 3 ]]; then
         echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Get file list failed: parameters number error." >> $syncyerrlog && return 1
     fi
+
     encodeUrl "$1"
     local limit="$2-$3"
 	local retrycnt=0
 	while [[ $retrycnt -le $retrytimes ]]; do
 		[[ $retrycnt -gt 0 ]] && sleep $retrydelay's'
 		response_str=$(curl -X GET --retry $retrytimes -A '' -sLk "https://pcs.baidu.com/rest/2.0/pcs/file?method=list&access_token=$access_token&path=$encoded_str&limit=$limit&by=name&order=asc")
+		#echo  ${#response_str};
 		if [[ ${#response_str} -lt 600 ]]; then
 			local iserror=$(echo $response_str | sed -rn 's/.*\"(error).*/\1/p')
 		fi
 		if [[ -n "$iserror" || ${#response_str} -eq 0 ]]; then
-			retrycnt=$((retrycnt + 1))
+			retrycnt=`expr $retrycnt + 1`
 		else
 			break
 		fi
 	done
 	[[ ${#response_str} -eq 0 ]] && echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Server not response on get pcs file list($1)." >> $syncyerrlog && return 1
+
 	if [[ -n "$iserror" ]]; then
         errcode=$(echo "$response_str" | sed -rn 's/.*\"error_code\":([0-9]+),.*/\1/p')
+        echo "errcode: "$errcode
 		[[ -z "$errcode" ]] && errcode=1
 		if [[ $errcode -eq 31066 ]]; then
 			return $errcode
@@ -179,6 +184,7 @@ getPcsFileList() {
 			return $errcode
 		fi
     fi
+
     unicodeDecode
     if [[ $? -eq 1 ]]; then
         echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Decode unicode file list failed: $3." >> $syncyerrlog
@@ -194,7 +200,7 @@ mUpload2Pcs() {
 		local response=$(curl -sSLk --retry $retrytimes -A '' -F "file=@$1" "https://c.pcs.baidu.com/rest/2.0/pcs/file?method=upload&access_token=$access_token&path=$encoded_str&ondup=newcopy")
 		local iserror=$(echo "$response" | sed -rn 's/.*\"(error).*/\1/p')
 		if [[ -n "$iserror" || ${#response} -eq 0 ]]; then
-			retrycnt=$((retrycnt + 1))
+			retrycnt=`expr $retrycnt + 1`
 		else
 			break
 		fi
@@ -212,7 +218,7 @@ uploadFile2Pcs() {
 		local response=$(curl -sSLk --retry $retrytimes -A '' -F "file=@\"$1\"" "https://c.pcs.baidu.com/rest/2.0/pcs/file?method=upload&access_token=$access_token&path=$encoded_str&ondup=$6")
 		local iserror=$(echo "$response" | sed -rn 's/.*\"(error).*/\1/p')
 		if [[ -n "$iserror" || ${#response} -eq 0 ]]; then
-			retrycnt=$((retrycnt + 1))
+			retrycnt=`expr $retrycnt + 1`
 		else
 			break
 		fi
@@ -245,7 +251,7 @@ rapidUploadFile2Pcs() {
 		local response=$(curl -sSLk --retry $retrytimes -A '' "https://pcs.baidu.com/rest/2.0/pcs/file?method=rapidupload&access_token=$access_token&path=$encoded_str&content-length=$3&content-md5=$contentmd5&slice-md5=$slicemd5&ondup=$6")
 		local iserror=$(echo "$response" | sed -rn 's/.*\"(error).*/\1/p')
 		if [[ -n "$iserror" || ${#response} -eq 0 ]]; then
-			retrycnt=$((retrycnt + 1))
+			retrycnt=`expr $retrycnt + 1`
 		else
 			break
 		fi
@@ -322,7 +328,7 @@ burstUploadFile2Pcs() {
 	 		local response=$(curl -sSLk --retry $retrytimes -A '' -F "file=@\"$tmpdir/syncy.upfile.tmp\"" "https://c.pcs.baidu.com/rest/2.0/pcs/file?method=upload&access_token=$access_token&type=tmpfile")
 	 		local iserror=$(echo $response | sed -rn 's/.*\"(error).*/\1/p')
 	 		if [[ -n "$iserror" || ${#response} -eq 0 ]]; then
-	 			retrycnt=$((retrycnt + 1))
+	 			retrycnt=`expr $retrycnt + 1`
 	 		else
 	 			break
 	 		fi
@@ -351,7 +357,7 @@ burstUploadFile2Pcs() {
 	 	local response=$(curl -sSLk --retry $retrytimes -A '' -F "param=$param" "https://pcs.baidu.com/rest/2.0/pcs/file?method=createsuperfile&access_token=$access_token&path=$encoded_str&ondup=$6")
 	 	local iserror=$(echo $response | sed -rn 's/.*\"(error).*/\1/p')
 	 	if [[ -n "$iserror" || ${#response} -eq 0 ]]; then
-	 		retrycnt=$((retrycnt + 1))
+	 		retrycnt=`expr $retrycnt + 1`
 	 	else
 	 		break
 	 	fi
@@ -400,7 +406,7 @@ downloadPcsFile() {
 				curl -sSLk -R --retry $retrytimes -Y 1 -y 60 -A '' -o "$4" "https://d.pcs.baidu.com/rest/2.0/pcs/file?method=download&access_token=$access_token&path=$encoded_str"
 			fi
 			if [[ $(ls -l "$4" | awk '{print $5}') -ne $3 ]]; then
-				retrycnt=$((retrycnt + 1))
+				retrycnt=`expr $retrycnt + 1`
 				rm -f "$4"
 			else
 				break
@@ -419,7 +425,7 @@ downloadPcsFile() {
 				curl -sSLk --retry $retrytimes --range "$saddr-$eaddr" -A '' -o "$tmpdir/syncy.dlfile.tmp" "https://d.pcs.baidu.com/rest/2.0/pcs/file?method=download&access_token=$access_token&path=$encoded_str"
 				local tmpsize=$(ls -l "$tmpdir/syncy.dlfile.tmp" | awk '{print $5}')
 				if [[ $tmpsize -ne $((eaddr - saddr + 1)) ]]; then
-					retrycnt=$((retrycnt + 1))
+					retrycnt=`expr $retrycnt + 1`
 					rm -f "$tmpdir/syncy.dlfile.tmp"
 				else
 					break
@@ -457,7 +463,7 @@ deletePcsFile() {
 		local response=$(curl -sSLk --retry $retrytimes -A '' "https://pcs.baidu.com/rest/2.0/pcs/file?method=delete&access_token=$access_token&path=$encoded_str")
 		local iserror=$(echo "$response" | sed -rn 's/.*\"(error).*/\1/p')
 		if [[ -n "$iserror" || ${#response} -eq 0 ]]; then
-			retrycnt=$((retrycnt + 1))
+			retrycnt=`expr $retrycnt + 1`
 		else
 			break
 		fi
@@ -477,7 +483,7 @@ movePcsFile() {
 		local response=$(curl -sSLk --retry $retrytimes -A '' "https://pcs.baidu.com/rest/2.0/pcs/file?method=move&access_token=$access_token&from=$fromstr&to=$encoded_str")
 		local iserror=$(echo "$response" | sed -rn 's/.*\"(error).*/\1/p')
 		if [[ -n "$iserror" || ${#response} -eq 0 ]]; then
-			retrycnt=$((retrycnt + 1))
+			retrycnt=`expr $retrycnt + 1`
 		else
 			break
 		fi
@@ -507,7 +513,7 @@ checkAndCreatePCSdir() {
 		local iserror=$(echo $response | sed -rn 's/.*\"(error).*/\1/p')
 		errcode=$(echo $response | sed -rn 's/.*\"error_code\":([0-9]+),.*/\1/p')
 		if [[ [ -n "$iserror" && $errcode -ne 31066 ] || ${#response} -eq 0 ]]; then
-			retrycnt=$((retrycnt + 1))
+			retrycnt=`expr $retrycnt + 1`
 		else
 			break
 		fi
@@ -520,7 +526,7 @@ checkAndCreatePCSdir() {
 			response=$(curl -sSLk --retry $retrytimes -A '' "https://pcs.baidu.com/rest/2.0/pcs/file?method=mkdir&access_token=$access_token&path=$encoded_str")
 			iserror=$(echo "$response" | sed -rn 's/.*\"(error).*/\1/p')
 			if [[ -n "$iserror" || ${#response} -eq 0 ]]; then
-				retrycnt=$((retrycnt + 1))
+				retrycnt=`expr $retrycnt + 1`
 			else
 				break
 			fi
@@ -544,24 +550,20 @@ compressData() {
 		fn1=`echo $fn|awk '{print $2}'`;
 		fn2=`echo $fn|awk '{print $3}'`;
 
-		echo $fn0
-		echo $fn1
-		echo $fn2
-
-
         if [[ -d "$1/$fn2" ]]; then
             compressData "$1/$fn2"
         elif [[ $bufferMemory = "on" ]]; then
-			local prk="$fn1 $fn0 "$(echo "$(1:$basedirlen)/$fn2)" | md5sum | cut -d ' ' -f1)
+			local prk="$fn1 $fn0 "$(echo "${1:$basedirlen}/$fn2)" | md5sum | cut -d ' ' -f1)
+			echo $prk
 			for idx in $syncInfo; do
-                if [[ "$idx:33)" = "$prk" ]]; then
+                if [[ "$idx:33" = "$prk" ]]; then
                     echo "$idx" >> $syncydbtmp
                     unset syncInfo[$idx]
                     break
                 fi
             done
         else
-            local prk="$fn1 $fn0 "$(echo "$(1:$basedirlen)/$fn2" | md5sum | cut -d ' ' -f1)
+            local prk="$fn1 $fn0 "$(echo "${1:$basedirlen}/$fn2" | md5sum | cut -d ' ' -f1)
             local syncl=$(grep ".* $prk$" $syncydb)
             [[ -n "$syncl" ]] && echo "$syncl" >> $syncydbtmp
         fi
@@ -569,7 +571,7 @@ compressData() {
 	return 0
 }
 startCompress() {
-	echo "startCompress";
+	echo "startCompress :" $@;
     if [[ $# -eq 0 ]]; then
 		local mpath=$syncpath
 		echo "`date +'%Y-%m-%d %H:%M:%S'` Start compress sync data."
@@ -728,27 +730,33 @@ uploadPath() {
     done
 }
 uploadPathPlus() {
-    echo "uploadPathPlus";
-    echo $@;
+    echo "uploadPathPlus:" $@;
     local startIdx=0
     getPcsFileList "$2" "$startIdx" "$listNum"
     local result=$?
-    echo $result;
+    echo "result: "$result " errcode: "$errcode;
+
 	[[ $result -ne 0 && $errcode -ne 31066 ]] && return 1
-    local lfnlist=$(ls -1 "$1")
-	local rfn=
-	local idx=
-    while [[ $result -eq 0 ]]; do
-		[[ ${#response_str} -lt 600 && "${response_str/'"path"'/}" = "$response_str" ]] && break
-		local rfnlist=${response_str//'},{'/"}"$'\n'"{"}
+    local lfnlist=`ls -1 $1`
+	local rfn=""
+	local idx=""
+    while [ $result -eq 0 ]; do
+		[[ ${#response_str} -lt 600 && "${response_str/'"path"'/}" = "$response_str" ]] &&  break
+		local rfnlist=${response_str//'},{'/'} {'}
+
+		rfnlist=${rfnlist//' '/$'\n'}
+
         for rfn in $rfnlist; do
+
             local fnfullpath=$(echo "$rfn" | sed -rn 's/.*\"path\":\"([^"]+)\",.*/\1/p')
+            echo "fnfullpath:" $fnfullpath;
 			local fnname="${fnfullpath##*/}"
             checkEliminate "$1/$fnname"
+
             [[ $? = 1 ]] && continue
             if [[ -e "$1/$fnname" ]]; then
                 for idx in $lfnlist; do
-                    if [[ "$idx)" = "$fnname" ]]; then
+                    if [[ "$idx" = "$fnname" ]]; then
                         unset lfnlist[$idx]
                         break
                     fi
@@ -785,18 +793,20 @@ uploadPathPlus() {
 					lmeta0=`echo $lmeta | awk '{print $1}'`
                     lmeta1=`echo $lmeta | awk '{print $2}'`
 					local fnmd5=$(echo  "${1:$basedirlen}/$fnname" | md5sum | cut -d ' ' -f1)
-                    rapidUploadFile2Pcs "$1/$fnname" "$(lmeta[0])" "$(lmeta[1])" "$2/$fnname" "$fnmd5" "overwrite"
+                    rapidUploadFile2Pcs "$1/$fnname" "$lmeta0" "$lmeta1" "$2/$fnname" "$fnmd5" "overwrite"
 				fi
             elif [[ $isdir -eq 1 ]]; then
 				uploadPathPlus "$1/$fnname" "$2/$fnname"
 				continue
             else
                 local lmeta=$(filetimestamp "$1/$fnname" | awk '{print $6"\n"$5}')
+                lmeta0=`echo $lmeta | awk '{print $1}'`
+                lmeta1=`echo $lmeta | awk '{print $2}'`
                 local fnmd5=$(echo  "${1:$basedirlen}/$fnname" | md5sum | cut -d ' ' -f1)
                 local rmd5=$(echo "$rfn" | sed -rn 's/.*\"md5\":\"([^"]+)\".*/\1/p')
                 local rsize=$(echo "$rfn" | sed -rn 's/.*\"size\":([0-9]+),.*/\1/p')
-				if [[ $(lmeta[1]) -eq $rsize ]]; then
-                    checkSyncStatus "$rmd5" "$(lmeta[0])" "$(lmeta[1])" "$fnmd5"
+				if [[ $lmeta1 -eq $rsize ]]; then
+                    checkSyncStatus "$rmd5" "$lmeta0" "$lmeta1" "$fnmd5"
                     [[ $? -eq 1 ]] && continue
                 fi
                 if [[ "$ondup" = "rename" ]]; then
@@ -818,15 +828,15 @@ uploadPathPlus() {
                     deletePcsFile "$2/$fnname" "s"
                 fi
                 if [[ -e "$1/$fnname.tmp.syy" ]]; then
-					burstUploadFile2Pcs "$1/$fnname" "$(lmeta[0])" "$(lmeta[1])" "$2/$fnname" "$fnmd5" "overwrite"
+					burstUploadFile2Pcs "$1/$fnname" "$lmeta0" "$lmeta1" "$2/$fnname" "$fnmd5" "overwrite"
                 else
-                    rapidUploadFile2Pcs "$1/$fnname" "$(lmeta[0])" "$(lmeta[1])" "$2/$fnname" "$fnmd5" "overwrite"
+                    rapidUploadFile2Pcs "$1/$fnname" "$lmeta0" "$lmeta1" "$2/$fnname" "$fnmd5" "overwrite"
                 fi
             fi
 			if [[ $? -eq 0 ]]; then
-				synccount=$((synccount + 1))
+				synccount=`expr $synccount + 1`
 			else
-				failcount=$((failcount + 1))
+				failcount=`expr $failcount + 1`
 			fi
         done
 		local rfnNum=$(echo "$rfnlist" | wc -l)
@@ -839,40 +849,48 @@ uploadPathPlus() {
 			return 1
 		fi
     done
-    for idx in $(!lfnlist[@]); do
-		[[ -z "$(lfnlist[$idx])" ]] && continue
-		checkEliminate "$1/$(lfnlist[$idx])"
+    for idx in $lfnlist; do
+		[[ -z "$idx" ]] && continue
+		checkEliminate "$1/$idx"
         [[ $? = 1 ]] && continue
-        checkPcsPath "$2" "$(lfnlist[$idx])"
+        checkPcsPath "$2" "$idx"
         [[ $? = 1 ]] && continue
-        if [[ -d "$1/$(lfnlist[$idx])" ]]; then
-            uploadPathPlus "$1/$(lfnlist[$idx])" "$2/$(lfnlist[$idx])"
-        elif [[ -f "$1/$(lfnlist[$idx])" ]]; then
-			local lmeta=$(filetimestamp "$1/$(lfnlist[$idx])" | awk '{print $6"\n"$5}')
-            local fnmd5=$(echo  "$(1:$basedirlen)/$(lfnlist[$idx])" | md5sum | cut -d ' ' -f1)
-            if [[ -e "$1/$(lfnlist[$idx]).tmp.syy" ]]; then
-				burstUploadFile2Pcs "$1/$(lfnlist[$idx])" "$(lmeta[0])" "$(lmeta[1])" "$2/$(lfnlist[$idx])" "$fnmd5" "overwrite"
+        if [[ -d "$1/$idx" ]]; then
+            uploadPathPlus "$1/$idx" "$2/$idx"
+        elif [[ -f "$1/$idx" ]]; then
+			local lmeta=$(filetimestamp "$1/$idx" | awk '{print $6"\n"$5}')
+			lmeta0=`echo $lmeta | awk '{print $1}'`
+            lmeta1=`echo $lmeta | awk '{print $2}'`
+            local fnmd5=$(echo  "${1:$basedirlen}/$idx" | md5sum | cut -d ' ' -f1)
+            if [[ -e "$1/$idx.tmp.syy" ]]; then
+				burstUploadFile2Pcs "$1/$idx" "$lmeta0" "$lmeta1" "$2/$idx" "$fnmd5" "overwrite"
             else
-                rapidUploadFile2Pcs "$1/$(lfnlist[$idx])" "$(lmeta[0])" "$(lmeta[1])" "$2/$(lfnlist[$idx])" "$fnmd5" "overwrite"
+                rapidUploadFile2Pcs "$1/$idx" "$lmeta0" "$lmeta1" "$2/$idx" "$fnmd5" "overwrite"
             fi
             if [[ $? -eq 0 ]]; then
-                synccount=$((synccount + 1))
+                synccount=`expr $synccount + 1`
             else
-                failcount=$((failcount + 1))
+                failcount=`expr $failcount + 1`
             fi
         fi
     done
 	return 0
 }
 downloadPath() {
+    echo "downloadPath:" $@
     local startIdx=0
     getPcsFileList "$2" "$startIdx" "$listNum"
     local result=$?
+    echo $result;
     [[ $result -ne 0 ]] && return 1
-	local rfn=
+    echo 11111;
+    echo 11111;
     while [[ $result -eq 0 ]]; do
+    	echo 11111;
 		[[ ${#response_str} -lt 600 && "${response_str/'"path"'/}" = "$response_str" ]] && break
+
 		local rfnlist=${response_str//'},{'/"}"$'\n'"{"}
+		echo "rfnlist:"$rfnlist;
         for rfn in $rfnlist; do
             local fnfullpath=$(echo "$rfn" | sed -rn 's/.*\"path\":\"([^"]+)\",.*/\1/p')
             local fnname="${fnfullpath##*/}"
@@ -916,9 +934,9 @@ downloadPath() {
                     downloadPcsFile "$2/$fnname" "$rmd5" "$rsize" "$1/$fnname" "$fnmd5"
                 fi
                 if [[ $? -eq 0 ]]; then
-                    synccount=$((synccount + 1))
+                    synccount=`expr $synccount + 1`
                 else
-                    failcount=$((failcount + 1))
+                    failcount=`expr $failcount + 1`
                 fi
             fi
         done
@@ -986,9 +1004,9 @@ downloadPathPlus() {
                     downloadPcsFile "$2/$fnname" "$rmd5" "$rsize" "$1/$fnname" "$fnmd5"
                 fi
                 if [[ $? -eq 0 ]]; then
-                    synccount=$((synccount + 1))
+                    synccount=`expr $synccount + 1`
                 else
-                    failcount=$((failcount + 1))
+                    failcount=`expr $failcount + 1`
                 fi
             fi
 		done
@@ -1059,9 +1077,9 @@ syncPath() {
 						deletePcsFile "$2/$fnname" "s"
 						uploadPathPlus "$1/$fnname" "$2/$fnname"
 						if [[ $? -eq 0 ]]; then
-							synccount=$((synccount + 1))
+							synccount=`expr $synccount + 1`
 						else
-							failcount=$((failcount + 1))
+							failcount=`expr $failcount + 1`
 						fi
 						continue
 					else
@@ -1073,9 +1091,9 @@ syncPath() {
 							deletePcsFile "$2/$fnname" "s"
 							uploadPathPlus "$1/$fnname" "$2/$fnname"
 							if [[ $? -eq 0 ]]; then
-								synccount=$((synccount + 1))
+								synccount=`expr $synccount + 1`
 							else
-								failcount=$((failcount + 1))
+								failcount=`expr $failcount + 1`
 							fi
 							continue
 						fi
@@ -1091,9 +1109,9 @@ syncPath() {
 						rm -rf "$1/$fnname"
 						downloadPcsFile "$2/$fnname" "$rmd5" "$rsize" "$1/$fnname" "$fnmd5"
 						if [[ $? -eq 0 ]]; then
-							synccount=$((synccount + 1))
+							synccount=`expr $synccount + 1`
 						else
-							failcount=$((failcount + 1))
+							failcount=`expr $failcount + 1`
 						fi
 						continue
 					fi
@@ -1131,9 +1149,9 @@ syncPath() {
                 fi
             fi
 			if [[ $? -eq 0 ]]; then
-				synccount=$((synccount + 1))
+				synccount=`expr $synccount + 1`
 			else
-				failcount=$((failcount + 1))
+				failcount=`expr $failcount + 1`
 			fi
         done
 		local rfnNum=$(echo "$rfnlist" | wc -l)
@@ -1172,9 +1190,9 @@ syncPath() {
                 rapidUploadFile2Pcs "$1/$(lfnlist[$idx])" "$(lmeta[0])" "$(lmeta[1])" "$2/$(lfnlist[$idx])" "$fnmd5" "overwrite"
             fi
             if [[ $? -eq 0 ]]; then
-                synccount=$((synccount + 1))
+                synccount=`expr $synccount + 1`
             else
-                failcount=$((failcount + 1))
+                failcount=`expr $failcount + 1`
             fi
         fi
     done
@@ -1215,7 +1233,7 @@ startSync() {
 			case "$synctype" in
                 "0"|"u"|"U"|"upload")
                     uploadPath "$localdir" "$pcsroot$remotedir"
-					synctotal=$((synctotal + synccount))
+					synctotal=`expr $synctotal + synccount`
                  ;;
                 "1"|"u+"|"U+"|"upload+")
                     uploadPathPlus "$localdir" "$pcsroot$remotedir"
@@ -1223,7 +1241,7 @@ startSync() {
                  ;;
                 "2"|"d"|"D"|"download")
                     downloadPath "$localdir" "$pcsroot$remotedir"
-					synctotal=$((synctotal + synccount))
+					synctotal=`expr $synctotal + synccount`
                  ;;
                 "3"|"d+"|"D+"|"download+")
                     downloadPathPlus "$localdir" "$pcsroot$remotedir"
@@ -1241,6 +1259,7 @@ startSync() {
 			basedirlen=0
         else
             echo "ERROR `date +'%Y-%m-%d %H:%M:%S'`: Sync \"$ipath\" failed, local directory is not exist or is normal file." >> $syncyerrlog
+            mkdir -p $localdir
         fi
 		if [[ $failcount -eq 0 && $errorcount -eq 0 ]]; then
 			echo "`date +'%Y-%m-%d %H:%M:%S'` Sync path: \"$ipath\" complete, Success sync $synccount files."
@@ -1254,7 +1273,7 @@ startSync() {
 }
 
 initSyncy() {
-
+    echo "initSyncy"
     #eliminate_files=\(${eliminate_files//;/$'\n'}\)
 
 	eliminate_files=${eliminate_files//'.'/'\.'}
@@ -1262,18 +1281,19 @@ initSyncy() {
     eliminate_files=${eliminate_files//'*'/'.*'}
 
     eliminate_files=${eliminate_files//'?'/'.?'}
-	#local idx=
-	#i=0;
+
+    eliminate_files=${eliminate_files//;/$'\n'}
+
 	tmp_eliminate_files=""
-    for idx in $tmp; do
-    	$tmp_eliminate_files=$('^'"$idx"'$ ' +$tmp_eliminate_files)
+	#echo $eliminate_files;
+    for idx in $eliminate_files; do
+        #echo $idx;
+    	tmp_eliminate_files=`echo '^'"$idx"'$ ' $tmp_eliminate_files`
        	#i=`expr $i + 1`;
     done
-    $eliminate_files=$tmp_eliminate_files;
-	#echo $eliminate_files
-	# for idx in $(!eliminate_files[@]); do
-    #     eliminate_files$idx='^'"$(eliminate_files[$idx])"'$'
-	# done
+    eliminate_files=$tmp_eliminate_files;
+	echo "eliminate_files: "$eliminate_files
+
 }
 testChinese() {
     response_str="\u4e2d\u6587\u8f6c\u7801\u6d4b\u8bd5"
