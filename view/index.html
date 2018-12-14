@@ -152,24 +152,6 @@
                                     </td>
                                 </tr>
                             </table>
-                            <br/>
-                            <hr/>
-
-
-                            同步说明
-                            <div class="list-block" style="padding: 20px;">
-
-                                <!--refresh_token:{{refresh_token}}<br/>-->
-                                <!--access_token:{{access_token}}<br/>-->
-
-                                [上传]:<br/> 只检查本地文件并上传修改过的文件，忽略远端的所有修改或删除，远端删除的也不再上传<br/>
-                                [上传+]:<br/>
-                                远端是本地的完全镜像，忽略远端的修改，远端删除的文件在下一次同步时将上传，远端新增的文件如果本地不存在，将不做任何变化<br/>
-                                [下载]:<br/> 只检查远端文件是否修改，如有修改下载到本地，忽略本地的修改；如本地文件被删除，将不再下载<br/>
-                                [下载+]:<br/> 检查远端和本地文件，如远端有修改，下载到本地，忽略本地的修改；如本地有文件被删除，将重新下载<br/>
-                                [同步]:<br/>
-                                同时检查远端和本地文件，如只有远端被修改，则下载到本地；如只有本地修改，则上传到远端；如本地和远端都被修改，则以冲突设置方式为准。<br/>
-                            </div>
 
                         </div>
                     </div>
@@ -221,7 +203,7 @@
 
                                         </div>
 
-                                        <div class="swipeout-actions-right" @click="deleteLanItem(index)"
+                                        <div class="swipeout-actions-right" @click="deleteItem(index)"
                                              :data-index="index">
                                             <a class="swipeout-delete">删除</a></div>
                                     </li>
@@ -239,13 +221,25 @@
 
                 <div class="tabs tab-content" v-show="nowIndex===2">
                     <div class="help">
-                        <p>frp 是一个可用于内网穿透的高性能的反向代理应用，支持 tcp, udp, http, https 协议。</p>
-                        <p>*基本配置和自定义配置是分离的，相互不会影响</p>
-                        <font color="red">*点击保存，会保存当前页面配置，且frpc读取的是最新保存的配置</font>
-                        <p>*保存配置后请重启frpc进程以便配置生效</p>
+                        名称：{{name}} 版本：<font color="green">{{type}}</font>-{{version}}
+                        <hr/>
+
+                        <div class="list-block" style="padding: 20px;">
+                            <strong>同步说明</strong><br/>
+                            <!--refresh_token:{{refresh_token}}<br/>-->
+                            <!--access_token:{{access_token}}<br/>-->
+
+                            [上传]:<br/> 只检查本地文件并上传修改过的文件，忽略远端的所有修改或删除，远端删除的也不再上传<br/>
+                            [上传+]:<br/>
+                            远端是本地的完全镜像，忽略远端的修改，远端删除的文件在下一次同步时将上传，远端新增的文件如果本地不存在，将不做任何变化<br/>
+                            [下载]:<br/> 只检查远端文件是否修改，如有修改下载到本地，忽略本地的修改；如本地文件被删除，将不再下载<br/>
+                            [下载+]:<br/> 检查远端和本地文件，如远端有修改，下载到本地，忽略本地的修改；如本地有文件被删除，将重新下载<br/>
+                            [同步]:<br/>
+                            同时检查远端和本地文件，如只有远端被修改，则下载到本地；如只有本地修改，则上传到远端；如本地和远端都被修改，则以冲突设置方式为准。
+                        </div>
+                        如果发现接口报错可以尝试通过<input type="button" onclick="restartService()" value="重启服务进程"/>解决
                         <p>*列表左滑可以删除</p>
                         <p>
-
                             <br/>
 
                         <hr/>
@@ -288,6 +282,9 @@
             tabsParam: ['基本配置', '同步列表', "?"],//（这个也可以用对象key，value来实现）
             nowIndex: 0,//默认激活状态
             user_config: "",
+            name: "----",
+            type: "----",
+            version: "----",
             syncConfig: {
                 syncyerrlog: './log/syncYerr.log',
                 unicodetable: './res/unicodetable.txt',
@@ -532,16 +529,8 @@
                 // 复位
                 this.restSlide();
                 // 删除
-                router_app.$data.nodeList.splice(index, 1);
+                router_app.$data.syncList.splice(index, 1);
             },
-            //删除lan
-            deleteLanItem(index) {
-                // 复位
-                this.restSlide();
-                // 删除
-                router_app.$data.lanList.splice(index, 1);
-            }
-
         }
     });
 
@@ -554,6 +543,7 @@
         });
         loadConfig();
         getDeviceInfo();
+        getRouterInfo();
         setTimeout(function () {
             if (router_app.$data.pcsConfig.access_token != "") {
                 router_app.getQuota();
