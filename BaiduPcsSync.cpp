@@ -27,13 +27,15 @@ using std::thread;
 
 BaiduPcsSync::BaiduPcsSync() {
 }
-//void startFrpc(){
-//    system("/frp/frpc_autorun.sh");
-//}
+
+void startSync() {
+    Tools::runCommand("pcsSync >> /sync.log");
+}
+
 //
-//void killAutorun(){
-//    system("sleep 2 && killall \"frpc_autorun.sh\">>./shell.log");
-//}
+void killAutorun() {
+    Tools::runCommand("killall pcsSync");
+}
 
 
 void
@@ -88,8 +90,8 @@ BaiduPcsSync::onParameterRecieved(const std::string &params) {
             std::string config_file = "/bin/syncy.conf";
 
             std::string hasSet = Tools::runCommand("grep " + _key + " " + config_file);
-            if(hasSet==""){
-                Tools::runCommand("echo " + _key + "=" + _value + " >> "+config_file);
+            if (hasSet == "") {
+                Tools::runCommand("echo " + _key + "=" + _value + " >> " + config_file);
             }
             Tools::runCommand("sed -i 's/" + _key + "=.*/" + _key + "=" + _value + "/g' " + config_file);
 
@@ -97,6 +99,10 @@ BaiduPcsSync::onParameterRecieved(const std::string &params) {
         }
 
         return JSONObject::success(data);
+    } else if (method == "startSync") {
+        std::thread subthread(startSync);
+        subthread.detach();
+        return JSONObject::success("startSync");
     }
 
     return JSONObject::error(1, "parameter missing");

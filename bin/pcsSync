@@ -4,7 +4,7 @@
 # Web Home: http://mtjo.net/
 #####################################################################################
 # set config_file for your config storage path.
-config_file="syncy.conf"
+config_file="/etc/syncy.conf"
 
 # load config file
 [[ ! -f "$config_file" ]] && echo "ERROR: config file \"$config_file\" does not exist." && exit 1
@@ -14,7 +14,7 @@ config_file="syncy.conf"
 pcsroot="/apps/mtjo"
 _init() {
 	echo "_init pcs"
-	if ! type curl >/dev/null 2>&1 ; then
+	if [ ! -f "/bin/curl" ] ; then
 		echo "ERROR: The system must be installed curl!"
 		exit 1
 	fi
@@ -622,10 +622,8 @@ startCompress() {
 	fi
 }
 checkEliminate() {
-	echo "checkEliminate"
+	echo "checkEliminate:" $@
 	[[ "${1:$((${#1}-8))}" = ".tmp.syy" ]] && return 1
-	local idx=
-	#echo $eliminate_files;
 	for idx in $eliminate_files ; do
 		local elimi=$(echo "$1" | grep "$idx")
 		if [[ -n "$elimi" ]]; then
@@ -706,10 +704,11 @@ unicodeDecode() {
 	return 0
 }
 uploadPath() {
-	echo "uploadPath"
-	local lfn=
+	echo "uploadPath:" $@
 	for lfn in $(ls -1 "$1"); do
+	echo $lfn;
 		checkEliminate "$1/$lfn"
+		echo $?
 		[[ $? = 1 ]] && continue
 		checkPcsPath "$2" "$lfn"
 		[[ $? = 1 ]] && continue

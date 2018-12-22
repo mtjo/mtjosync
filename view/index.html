@@ -87,6 +87,10 @@
                             <input v-if="quota>0" type="button" @click="bindPcs" value="重新绑定"/>
                             <input v-if="quota>0" type="button" onclick="refresh_access_token()"
                                    value="刷新"/>
+
+                            <input type="button" onclick="startSync()"
+                                   value="startSync"/>
+
                             <hr/>
 
 
@@ -304,7 +308,7 @@
                 access_token: '',
                 expires_in: '',
                 refresh_date: Math.round(new Date() / 1000),
-                compress_date:Math.round(new Date() / 1000),
+                compress_date: Math.round(new Date() / 1000),
                 synctotal: 0,
             },
             syncList: [],
@@ -321,29 +325,8 @@
         },
         methods: {
             syncEnable: function (runStatus) {
-                routerRequest.request({
-                    path: "/api-third-party/service/datacenter/set_config",
-                    type: "GET",
-                    data: {
-                        appId: appId,
-                        key: "runStatus",
-                        value: runStatus
-                    },
-                    success: function (data) {
-                        var response = jQuery.parseJSON(data);
-                        if (response.code != 0) {
-                            console.log(data);
-                            toast("错误：" + response.msg);
-                            return;
-                        }
-                        toast(data);
-                    },
-                    error: function (data) {
-                        toast("网络错误：" + data);
-                    }
-                });
+                saveConfig("runStatus", runStatus);
             },
-
             showDeviceid: function () {
                 routerRequest.request({
                     path: "/api-third-party/device",
@@ -367,39 +350,16 @@
                 });
             },
             getQuota: function () {
-                routerRequest.request({
-                    path: "/api-third-party/service/datacenter/plugin_control",
-                    type: "GET",
-                    data: {
-                        appId: appId,
-                        info: JSON.stringify({method: "getQuota"})
-                    },
-                    success: function (data) {
 
-                        var response = jQuery.parseJSON(data);
-                        if (response.code != 0) {
-                            //console.log(data);
-                            if (response.code == 2502) {
-                                pluginControlError(response);
-                            }
-                            //alert(data);
-                            //toast("错误：" + response.msg);
-                            return;
-                        }
-                        //alert(data);
-                        if (response.data.quota > 0) {
-                            router_app.$data.quota = response.data.quota / 1024 / 1024 / 1024;
-                            router_app.$data.quota = router_app.$data.quota.toFixed(2);
-                        }
+                pluginControl({method: "getQuota"}, function (data) {
+                    if (data.data.quota > 0) {
+                        router_app.$data.quota = data.data.quota / 1024 / 1024 / 1024;
+                        router_app.$data.quota = router_app.$data.quota.toFixed(2);
+                    }
 
-                        if (response.data.used > 0) {
-                            router_app.$data.used = response.data.used / 1024 / 1024 / 1024;
-
-                            router_app.$data.used = router_app.$data.used.toFixed(2);
-                        }
-                    },
-                    error: function (data) {
-                        alert("getQuota" + ":" + data);
+                    if (data.data.used > 0) {
+                        router_app.$data.used = data.data.used / 1024 / 1024 / 1024;
+                        router_app.$data.used = router_app.$data.used.toFixed(2);
                     }
                 });
             },
@@ -421,59 +381,16 @@
             savePcsConfig: function () {
                 $.extend(router_app.$data.syncConfig, router_app.$data.pcsConfig);
                 configData = JSON.stringify(router_app.$data.syncConfig);
-
-                alert(configData);
-
-                routerRequest.request({
-                    path: "/api-third-party/service/datacenter/plugin_control",
-                    type: "GET",
-                    data: {
-                        appId: appId,
-                        info: JSON.stringify({method: "savePcs", configData: configData})
-                    },
-                    success: function (data) {
-
-                        var response = jQuery.parseJSON(data);
-                        if (response.code != 0) {
-                            console.log(data);
-                            toast("runCommand错误：" + response.msg);
-                            return;
-                        }
-                        alert(data)
-
-
-                    },
-                    error: function (data) {
-                        alert("plugin_control:" + data);
-                    }
+                //alert(configData);
+                pluginControl({method: "savePcs", configData: configData}, function (data) {
+                    toast("同步配置保存成功！")
                 });
-
             },
             saveSyncList: function () {
                 encodefilesdata = encodeURIComponent(JSON.stringify(router_app.$data.syncList));
-                routerRequest.request({
-                    path: "/api-third-party/service/datacenter/set_config",
-                    type: "GET",
-                    data: {
-                        appId: appId,
-                        key: "syncList",
-                        value: encodefilesdata
-                    },
-                    success: function (data) {
-                        var response = jQuery.parseJSON(data);
-                        if (response.code != 0) {
-                            console.log(data);
-                            alert("错误：" + response.msg);
-                            return;
-                        }
-                        toast("保存成功！")
-                    },
-                    error: function (data) {
-                        toast("网络错误：" + data);
-                    }
+                saveConfig("syncList", encodefilesdata, function (data) {
+                    toast("保存成功！");
                 });
-
-
             },//跳转
             skip() {
                 if (this.checkSlide()) {
@@ -534,7 +451,6 @@
         }
     });
 
-
     $(document).ready(function () {
         $("#authorizeButton").click(function () {
             if (!routerRequest.hasAccessToken()) {
@@ -542,8 +458,14 @@
             }
         });
         loadConfig();
-        getDeviceInfo();
-        getRouterInfo();
+        getDeviceInfo(function (data) {
+            router_app.$data.syncConfig.device_code = data.device.id;
+        });
+        getRouterInfo(function (data) {
+            router_app.$data.version = data.version;
+            router_app.$data.type = data.type;
+            router_app.$data.name = data.name;
+        });
         setTimeout(function () {
             if (router_app.$data.pcsConfig.access_token != "") {
                 router_app.getQuota();
@@ -552,84 +474,28 @@
     });
 
     function loadConfig() {
-
-        routerRequest.request({
-            path: "/api-third-party/service/datacenter/config_info",
-            type: "GET",
-            data: {
-                appId: appId,
-                key: "runStatus"
-            },
-            success: function (data) {
-                //alert(data)
-                var response = jQuery.parseJSON(data);
-                if (response.code != 0) {
-                    toast("错误：" + response.msg);
-                    return;
-                }
-                router_app.$data.runStatus = response.value == "true";
-            },
-            error: function (data) {
-                toast("错误：" + data);
-            }
+        getConfig("runStatus", function (data) {
+            router_app.$data.runStatus = data.value == "true";
         });
 
         //设置
-        routerRequest.request({
-            path: "/api-third-party/service/datacenter/config_info",
-            type: "GET",
-            data: {
-                appId: appId,
-                key: "syncList"
-            },
-            success: function (data) {
-                var response = jQuery.parseJSON(data);
-                if (response.code != 0) {
-                    console.log(data);
-                    toast("同步列表错误：" + response.msg);
-                    return;
-                }
-                syncListStr = decodeURIComponent(response.value);
-                if (syncListStr != "") {
-                    syncList = jQuery.parseJSON(syncListStr);
-                    router_app.$data.syncList = syncList;
-                }
-            },
-            error: function (data) {
-                toast("同步列表网络错误：" + data);
+        getConfig("syncList", function (data) {
+            syncListStr = decodeURIComponent(data.value);
+            if (syncListStr != "") {
+                syncList = jQuery.parseJSON(syncListStr);
+                router_app.$data.syncList = syncList;
             }
         });
 
-
-        routerRequest.request({
-            path: "/api-third-party/service/datacenter/config_info",
-            type: "GET",
-            data: {
-                appId: appId,
-                key: "pcsConfig"
-            },
-            success: function (data) {
-                var response = jQuery.parseJSON(data);
-                if (response.code != 0) {
-                    console.log(data);
-                    toast("pcsConfig错误：" + response.msg);
-                    return;
-                }
-                jsonstr = decodeURIComponent(response.value);
-
-                router_app.$data.pcsConfig = JSON.parse(jsonstr);
-                if (router_app.$data.pcsConfig != null) {
-                    //alert(router_app.$data.pcsConfig.access_token);
-                    router_app.$data.access_token = router_app.$data.pcsConfig.access_token;
-                    router_app.$data.refresh_token = router_app.$data.pcsConfig.refresh_token;
-                }
-
-            },
-            error: function (data) {
-                toast("pcsConfig网络错误：" + data);
+        getConfig("pcsConfig", function (data) {
+            jsonstr = decodeURIComponent(data.value);
+            router_app.$data.pcsConfig = JSON.parse(jsonstr);
+            if (router_app.$data.pcsConfig != null) {
+                router_app.$data.access_token = router_app.$data.pcsConfig.access_token;
+                router_app.$data.refresh_token = router_app.$data.pcsConfig.refresh_token;
+                router_app.getQuota();
             }
         });
-
     }
 
 
@@ -659,79 +525,52 @@
                 pcsConfig = token;
 
                 router_app.$data.access_token = token.access_token;
-
-                routerRequest.request({
-                    path: "/api-third-party/service/datacenter/set_config",
-                    type: "GET",
-                    data: {
-                        appId: appId,
-                        key: "accessToken",
-                        value: router_app.$data.access_token
-                    },
-                    success: function (data) {
-                        var response = jQuery.parseJSON(data);
-                        if (response.code != 0) {
-                            alert("错误：" + response.msg);
-                            return;
-                        }
-                    },
-                    error: function (data) {
-                        toast("网络错误：" + data);
-                    }
-                });
-
+                saveConfig("accessToken", router_app.$data.access_token);
 
                 router_app.$data.refresh_token = token.refresh_token;
-
-                routerRequest.request({
-                    path: "/api-third-party/service/datacenter/set_config",
-                    type: "GET",
-                    data: {
-                        appId: appId,
-                        key: "refreshToken",
-                        value: router_app.$data.refresh_token
-                    },
-                    success: function (data) {
-                        var response = jQuery.parseJSON(data);
-                        if (response.code != 0) {
-                            alert("错误：" + response.msg);
-                            return;
-                        }
-                    },
-                    error: function (data) {
-                        toast("网络错误：" + data);
-                    }
-                });
-
+                saveConfig("refreshToken", router_app.$data.refresh_token);
                 encodetoken = encodeURIComponent(JSON.stringify(token));
-                alert(encodetoken);
                 //token 存到小米配置
-                routerRequest.request({
-                    path: "/api-third-party/service/datacenter/set_config",
-                    type: "GET",
-                    data: {
-                        appId: appId,
-                        key: "pcsConfig",
-                        value: encodetoken
-                    },
-                    success: function (data) {
-                        var response = jQuery.parseJSON(data);
-                        if (response.code != 0) {
-                            alert("错误：" + response.msg);
-                            return;
-                        }
-                    },
-                    error: function (data) {
-                        toast("网络错误：" + data);
-                    }
-                });
+                saveConfig("pcsConfig", encodetoken);
 
             },
             "json");
     }
 
+
+    function pluginControl(pargams, callback) {
+        method = pargams.method;
+        routerRequest.request({
+            path: "/api-third-party/service/datacenter/plugin_control",
+            type: "GET",
+            data: {
+                appId: appId,
+                info: JSON.stringify(pargams)
+            },
+            success: function (data) {
+                var response = jQuery.parseJSON(data);
+                if (response.code != 0) {
+                    console.log(data);
+                    //alert(data)
+                    if (response.code == -1 || response.code == 6) {
+                        restartService();
+                        return;
+                    }
+                    toast(method + " 错误：" + response.msg);
+                    return;
+                }
+                callback(response);
+
+            },
+            error: function (data) {
+                alert(method + ":" + data);
+            }
+        });
+    }
+
+
     //开启插件
-    function pluginEnable() {
+    function pluginEnable(callback) {
         routerRequest.request({
             path: "/api-third-party/service/datacenter/plugin_enable",
             type: "GET",
@@ -745,16 +584,17 @@
                     toast("启动插件错误：" + response.msg);
                     return;
                 }
+                callback(response);
                 //toast(data)
             },
             error: function (data) {
-                //alert("plugin_enable:" + data);
+                alert("pluginEnable:" + data);
             }
         });
     }
 
     //关闭插件
-    function pluginDisable() {
+    function pluginDisable(callback) {
         routerRequest.request({
             path: "/api-third-party/service/datacenter/plugin_disable",
             type: "GET",
@@ -768,16 +608,18 @@
                     toast("关闭插件错误：" + response.msg);
                     return;
                 }
+                callback(response);
                 //toast(data)
             },
             error: function (data) {
-                alert("plugin_disable:" + data);
+                alert("pluginEnable:" + data);
             }
         });
     }
 
+
     //获取插件开启关闭状态
-    function getPluginStatus() {
+    function getPluginStatus(callback) {
         routerRequest.request({
             path: "/api-third-party/service/datacenter/get_plugin_status",
             type: "GET",
@@ -791,72 +633,68 @@
                     toast("获取插件开启关闭状态错误：" + response.msg);
                     return;
                 }
-                //toast(data)
-                return response.isEnable;
+                callback(response)
             },
             error: function (data) {
-                alert("plugin_control:" + data);
+                alert("get_plugin_status:" + data);
             }
         });
     }
 
-
-    function runCommand(command) {
-        //插件状态
+    //获取配置
+    function getConfig(key, callback) {
+        //取设置
         routerRequest.request({
-            path: "/api-third-party/service/datacenter/plugin_control",
+            path: "/api-third-party/service/datacenter/config_info",
             type: "GET",
             data: {
                 appId: appId,
-                info: JSON.stringify({method: "runCommand", command: command})
+                key: key
             },
             success: function (data) {
-
                 var response = jQuery.parseJSON(data);
                 if (response.code != 0) {
                     console.log(data);
-                    toast("runCommand错误：" + response.msg);
+                    toast(key + " 错误：" + response.msg);
                     return;
                 }
-                alert(response.data)
-
-
+                callback(response);
             },
             error: function (data) {
-                alert("plugin_control:" + data);
+                console.log("error:", data);
+                alert("网络失败");
             }
         });
-
     }
 
-
-    //获取路由器信息
-    function getRouterInfo() {
+    //保存配置
+    function saveConfig(key, value, callback) {
+        //代理设置
         routerRequest.request({
-            path: "/api-third-party/service/datacenter/get_router_info",
+            path: "/api-third-party/service/datacenter/set_config",
             type: "GET",
             data: {
-                appId: appId
+                appId: appId,
+                key: key,
+                value: value
             },
             success: function (data) {
                 var response = jQuery.parseJSON(data);
                 if (response.code != 0) {
                     console.log(data);
-                    toast("获取路由器信息错误：" + response.msg);
+                    alert("保存配置错误：" + response.msg);
                     return;
                 }
-                //alert(data)
-                router_app.version = response.version;
-                router_app.type = response.type;
-                router_app.name = response.name;
+                callback(data);
             },
             error: function (data) {
-                alert("plugin_control:" + data);
+                alert("网络失败");
             }
         });
     }
+
     //获取路由器信息
-    function getDeviceInfo() {
+    function getDeviceInfo(callback) {
         routerRequest.request({
             path: "/api-third-party/device",
             type: "GET",
@@ -870,16 +708,45 @@
                     toast("获取路由器信息错误：" + response.msg);
                     return;
                 }
-                //alert(data)
-                router_app.$data.syncConfig.device_code=response.device.id;
+                callback(response);
             },
             error: function (data) {
-                alert("plugin_control:" + data);
+                alert("getDeviceInfo:" + data);
             }
         });
     }
 
+    //获取路由器信息
+    function getRouterInfo(callback) {
+        routerRequest.request({
+            path: "/api-third-party/service/datacenter/get_router_info",
+            type: "GET",
+            data: {
+                appId: appId
+            },
+            success: function (data) {
+                var response = jQuery.parseJSON(data);
+                if (response.code != 0) {
+                    console.log(data);
+                    toast("获取路由器信息错误：" + response.msg);
+                    return;
+                }
+                callback(response);
+            },
+            error: function (data) {
+                alert("getRouterInfo:" + data);
+            }
+        });
+    }
 
+    function restartService() {
+        pluginDisable();
+        pluginEnable();
+        router_app.getQuota();
+        setTimeout(function () {
+            router_app.getQuota();
+        }, 1000);
+    }
 
     function refresh_access_token() {
         $.get('/baiduSync/oauth.php',
@@ -889,15 +756,13 @@
                 alert(token);
             },
             "text");
-
     }
 
-    function pluginControlError(data) {
-        pluginDisable();
-        pluginEnable();
-        setTimeout(function () {
-            router_app.getQuota();
-        }, 1000);
+    function startSync() {
+        pluginControl({method: "startSync"}, function (data) {
+            alert(JSON.stringify(data));
+        })
+
     }
 
     function toast(msg) {
