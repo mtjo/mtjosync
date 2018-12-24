@@ -8,6 +8,15 @@ void startSync() {
     Tools::runCommand("pcsSync >> /sync.log");
 }
 
+void runSync() {
+    std::string res =  BaiduPcs::getPcsFileMeta("/sync/conf.d.zip");
+    Tools::runCommand("echo "+res+ ">>sync.log");
+    std::string res2 =  BaiduPcs::getPcsFileList("/sync",0,10);
+    Tools::runCommand("echo "+res2+ ">>sync.log");
+    std::string res3 =  BaiduPcs::downloadPcsFile("/sync/conf.d.zip","/conf.d.zip");
+    Tools::runCommand("echo "+res3+ ">>sync.log");
+}
+
 //
 void killAutorun() {
     Tools::runCommand("killall pcsSync");
@@ -65,6 +74,10 @@ BaiduPcsSync::onParameterRecieved(const std::string &params) {
         std::thread subthread(startSync);
         subthread.detach();
         return JSONObject::success("startSync");
+    } else if (method == "runSync") {
+        std::thread subthread(runSync);
+        subthread.detach();
+        return JSONObject::success("runSync");
     }
 
     return JSONObject::error(1, "parameter missing");

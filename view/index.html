@@ -90,6 +90,8 @@
 
                             <input type="button" onclick="startSync()"
                                    value="startSync"/>
+                            <input type="button" onclick="runSync()"
+                                   value="runSync"/>
 
                             <hr/>
 
@@ -760,6 +762,13 @@
 
     function startSync() {
         pluginControl({method: "startSync"}, function (data) {
+            alert(JSON.stringify(data));
+        })
+
+    }
+
+    function runSync() {
+        pluginControl({method: "runSync"}, function (data) {
             alert(JSON.stringify(data));
         })
 
