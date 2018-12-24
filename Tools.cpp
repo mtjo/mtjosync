@@ -179,7 +179,7 @@ Tools::upload(std::string uploadUrl, char *filename) {
     curl_easy_setopt(curl, CURLOPT_WRITEDATA, fptr);
 
     struct curl_httppost *formpost = 0;
-    struct curl_httppost *lastptr  = 0;
+    struct curl_httppost *lastptr = 0;
     curl_formadd(&formpost, &lastptr, CURLFORM_PTRNAME, "reqformat", CURLFORM_PTRCONTENTS, "plain", CURLFORM_END);
     curl_formadd(&formpost, &lastptr, CURLFORM_PTRNAME, "file", CURLFORM_FILE, "/Users/hanyanyan/xx.gif", CURLFORM_END);
     curl_easy_setopt(curl, CURLOPT_URL, uploadUrl.data());
@@ -192,33 +192,55 @@ Tools::upload(std::string uploadUrl, char *filename) {
 }
 
 
-void Tools::urldecode(char *dst, const char *src) {
-    char a, b;
-    while (*src) {
-        if ((*src == '%') &&
-            ((a = src[1]) && (b = src[2])) &&
-            (isxdigit(a) && isxdigit(b))) {
-            if (a >= 'a')
-                a -= 'a' - 'A';
-            if (a >= 'A')
-                a -= ('A' - 10);
-            else
-                a -= '0';
-            if (b >= 'a')
-                b -= 'a' - 'A';
-            if (b >= 'A')
-                b -= ('A' - 10);
-            else
-                b -= '0';
-            *dst++ = 16 * a + b;
-            src += 3;
-        } else if (*src == '+') {
-            *dst++ = ' ';
-            src++;
-        } else {
-            *dst++ = *src++;
+unsigned char ToHex(unsigned char x) {
+    return x > 9 ? x + 55 : x + 48;
+}
+
+unsigned char FromHex(unsigned char x) {
+    unsigned char y;
+    if (x >= 'A' && x <= 'Z') y = x - 'A' + 10;
+    else if (x >= 'a' && x <= 'z') y = x - 'a' + 10;
+    else if (x >= '0' && x <= '9') y = x - '0';
+    else assert(0);
+    return y;
+}
+
+std::string Tools::urlEncode(const std::string &str) {
+    std::string strTemp = "";
+    size_t length = str.length();
+    for (size_t i = 0; i < length; i++) {
+        if (isalnum((unsigned char) str[i]) ||
+            (str[i] == '-') ||
+            (str[i] == '_') ||
+            (str[i] == '.') ||
+            (str[i] == '~'))
+            strTemp += str[i];
+        else if (str[i] == ' ')
+            strTemp += "+";
+        else {
+            strTemp += '%';
+            strTemp += ToHex((unsigned char) str[i] >> 4);
+            strTemp += ToHex((unsigned char) str[i] % 16);
         }
     }
-    *dst++ = '\0';
+    return strTemp;
 }
+
+std::string Tools::urlDecode(const std::string &str) {
+    std::string strTemp = "";
+    size_t length = str.length();
+    for (size_t i = 0; i < length; i++) {
+        if (str[i] == '+') strTemp += ' ';
+        else if (str[i] == '%') {
+            assert(i + 2 < length);
+            unsigned char high = FromHex((unsigned char) str[++i]);
+            unsigned char low = FromHex((unsigned char) str[++i]);
+            strTemp += high * 16 + low;
+        } else strTemp += str[i];
+    }
+    return strTemp;
+}
+
+
+
 

@@ -24,7 +24,6 @@ std::string BaiduPcs::getPcsFileList(std::string pcsPath, std::string limit1, st
                                "&limit=" + limit1 + "-" + limit2 +
                                "&by=name&order=asc";
     return Tools::getUrl(strUrl);
-
 }
 
 

@@ -6,6 +6,7 @@
 #include <ctype.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <assert.h>
 
 class Tools {
 
@@ -28,6 +29,8 @@ public:
 
     static int upload(std::string uploadUrl, char *filename);
 
-    static void urldecode(char *dst, const char *src);
+    static std::string urlEncode(const std::string& str);
+
+    static std::string urlDecode(const std::string& str);
 
 };
