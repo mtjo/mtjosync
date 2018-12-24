@@ -1,29 +1,5 @@
 #include "BaiduPcsSync.h"
 
-#include <ctype.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <unistd.h>
-#include <string.h>
-#include <string>
-#include <thread>
-#include <regex>
-
-#include <algorithm>
-#include <iostream>
-#include <string>
-#include <vector>
-#include <stdexcept>
-#include <stdio.h>
-#include "json/json.h"
-#include "JSON.h"
-#include "Tools.h"
-//#include "boost/thread.hpp"
-
-using std::string;
-using std::thread;
-
-#define BUF_SIZE 256
 
 BaiduPcsSync::BaiduPcsSync() {
 }
@@ -56,28 +32,14 @@ BaiduPcsSync::onParameterRecieved(const std::string &params) {
     if (method == "") {
         return JSONObject::error(999, "method can not be null");
     } else if (method == "getQuota") {
-        std::string pcsConfig = Tools::getData("pcsConfig");
 
-        const char *input = pcsConfig.data();
-        char *output = (char *) malloc(strlen(input) + 1);
-
-        Tools::urldecode(output, input);
-        //data.put("pcsConfig",pcsConfig);
-        pcsConfig = output;
-        //data.put("output",pcsConfig);
-
-
-        std::string accessToken = Tools::getParamsByKey(pcsConfig, "access_token");
-        const std::string strUrl = "https://pcs.baidu.com/rest/2.0/pcs/quota?method=info&access_token=" + accessToken;
-
-        std::string res = Tools::getUrl(strUrl);
+        std::string res = BaiduPcs::getPcsQuota();
         std::string quota = Tools::getParamsByKey(res, "quota");
         std::string used = Tools::getParamsByKey(res, "used");
-
         data.put("quota", quota);
         data.put("used", used);
-
         return JSONObject::success(data);
+
     } else if (method == "savePcs") {
         std::string configStr = Tools::getParamsByKey(params, "configData");
         const char *ch = configStr.data();

@@ -56,12 +56,11 @@ Tools::getParamsByKey(const std::string params, std::string key) {
     return data;
 }
 
-size_t req_reply(void *ptr, size_t size, size_t nmemb, void *stream)
-{
+size_t req_reply(void *ptr, size_t size, size_t nmemb, void *stream) {
     //cout << "----->reply" << endl;
-    string *str = (string*)stream;
+    string *str = (string *) stream;
     cout << *str << endl;
-    (*str).append((char*)ptr, size*nmemb);
+    (*str).append((char *) ptr, size * nmemb);
     return size * nmemb;
 }
 
@@ -71,9 +70,8 @@ Tools::getUrl(const std::string url) {
     // init curl
     CURL *curl = curl_easy_init();
     // res code
-    CURLcode res;
-    if (curl)
-    {
+    //CURLcode res;
+    if (curl) {
         // set params
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str()); // url
         curl_easy_setopt(curl, CURLOPT_SSL_VERIFYPEER, false); // if want to use https
@@ -87,7 +85,8 @@ Tools::getUrl(const std::string url) {
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3); // set transport and time out time
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3);
         // start req
-        res = curl_easy_perform(curl);
+        //res = curl_easy_perform(curl);
+        curl_easy_perform(curl);
     }
     // release curl
     curl_easy_cleanup(curl);
@@ -101,9 +100,8 @@ Tools::postUrl(const std::string url, const std::string postParams) {
     // init curl
     CURL *curl = curl_easy_init();
     // res code
-    CURLcode res;
-    if (curl)
-    {
+    //CURLcode res;
+    if (curl) {
         // set params
         curl_easy_setopt(curl, CURLOPT_POST, 1); // post req
         curl_easy_setopt(curl, CURLOPT_URL, url.c_str()); // url
@@ -119,35 +117,101 @@ Tools::postUrl(const std::string url, const std::string postParams) {
         curl_easy_setopt(curl, CURLOPT_CONNECTTIMEOUT, 3);
         curl_easy_setopt(curl, CURLOPT_TIMEOUT, 3);
         // start req
-        res = curl_easy_perform(curl);
+        //res = curl_easy_perform(curl);
+        curl_easy_perform(curl);
     }
     // release curl
     curl_easy_cleanup(curl);
     return response;
 }
 
+size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
+    size_t written;
+    written = fwrite(ptr, size, nmemb, stream);
+    return written;
+}
 
-void Tools::urldecode(char *dst, const char *src)
-{
+int
+Tools::download(std::string downloadUrl, std::string savePath) {
+
+    CURL *curl;
+    FILE *fp;
+    //CURLcode res;
+    const char *url = downloadUrl.data();
+    char outfilename[FILENAME_MAX];
+
+    savePath.copy(outfilename, FILENAME_MAX, 0);
+    curl = curl_easy_init();
+    if (curl) {
+        fp = fopen(outfilename, "wb");
+        curl_easy_setopt(curl, CURLOPT_URL, url);
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
+        //res = curl_easy_perform(curl);
+        curl_easy_perform(curl);
+        curl_easy_cleanup(curl);
+        fclose(fp);
+    }
+    return 0;
+}
+
+//size_t write_data(void *buffer, size_t size, size_t nmemb, void *userp) {
+//    FILE *fptr = (FILE*)userp;
+//    fwrite(buffer, size, nmemb, fptr);
+//}
+
+int
+Tools::upload(std::string uploadUrl, char *filename) {
+    CURL *curl;
+    //CURLcode res;
+    FILE *fptr;
+    //struct curl_slist *http_header = NULL;
+
+    if ((fptr = fopen(filename, "w")) == NULL) {
+        fprintf(stderr, "fopen file error: %s\n", filename);
+        return 1;
+    }
+
+    curl = curl_easy_init();
+
+    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+    curl_easy_setopt(curl, CURLOPT_WRITEDATA, fptr);
+
+    struct curl_httppost *formpost = 0;
+    struct curl_httppost *lastptr  = 0;
+    curl_formadd(&formpost, &lastptr, CURLFORM_PTRNAME, "reqformat", CURLFORM_PTRCONTENTS, "plain", CURLFORM_END);
+    curl_formadd(&formpost, &lastptr, CURLFORM_PTRNAME, "file", CURLFORM_FILE, "/Users/hanyanyan/xx.gif", CURLFORM_END);
+    curl_easy_setopt(curl, CURLOPT_URL, uploadUrl.data());
+    curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
+
+    //res = curl_easy_perform(curl);
+    curl_easy_perform(curl);
+    curl_easy_cleanup(curl);
+    return 0;
+}
+
+
+void Tools::urldecode(char *dst, const char *src) {
     char a, b;
     while (*src) {
         if ((*src == '%') &&
             ((a = src[1]) && (b = src[2])) &&
             (isxdigit(a) && isxdigit(b))) {
             if (a >= 'a')
-                a -= 'a'-'A';
+                a -= 'a' - 'A';
             if (a >= 'A')
                 a -= ('A' - 10);
             else
                 a -= '0';
             if (b >= 'a')
-                b -= 'a'-'A';
+                b -= 'a' - 'A';
             if (b >= 'A')
                 b -= ('A' - 10);
             else
                 b -= '0';
-            *dst++ = 16*a+b;
-            src+=3;
+            *dst++ = 16 * a + b;
+            src += 3;
         } else if (*src == '+') {
             *dst++ = ' ';
             src++;

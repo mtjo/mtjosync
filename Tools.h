@@ -4,6 +4,8 @@
 #include "curl/curl.h"
 #include <stdlib.h>
 #include <ctype.h>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 class Tools {
 
@@ -21,6 +23,10 @@ public:
     static std::string getUrl(const std::string url);
 
     static std::string postUrl(const std::string url, const std::string postData);
+
+    static int download(std::string downloadUrl, std::string savePath);
+
+    static int upload(std::string uploadUrl, char *filename);
 
     static void urldecode(char *dst, const char *src);
 
