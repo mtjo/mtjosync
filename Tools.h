@@ -27,7 +27,7 @@ public:
 
     static int download(std::string downloadUrl, std::string savePath);
 
-    static int upload(std::string uploadUrl, char *filename);
+    static int upload(std::string uploadUrl, std::string localFilePath);
 
     static std::string urlEncode(const std::string& str);
 

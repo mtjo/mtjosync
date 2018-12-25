@@ -126,68 +126,63 @@ Tools::postUrl(const std::string url, const std::string postParams) {
 }
 
 size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
-    size_t written;
-    written = fwrite(ptr, size, nmemb, stream);
+    size_t written = fwrite(ptr, size, nmemb, stream);
     return written;
 }
 
 int
 Tools::download(std::string downloadUrl, std::string savePath) {
 
-    CURL *curl;
-    FILE *fp;
-    //CURLcode res;
-    const char *url = downloadUrl.data();
-    char outfilename[FILENAME_MAX];
+        CURL *curl;
+        FILE *fp;
+        CURLcode res;
 
-    savePath.copy(outfilename, FILENAME_MAX, 0);
-    curl = curl_easy_init();
-    if (curl) {
-        fp = fopen(outfilename, "wb");
-        curl_easy_setopt(curl, CURLOPT_URL, url);
-        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
-        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
-        curl_easy_setopt(curl, CURLOPT_VERBOSE, 1L);
-        //res = curl_easy_perform(curl);
-        curl_easy_perform(curl);
-        curl_easy_cleanup(curl);
-        fclose(fp);
-    }
-    return 0;
+        curl = curl_easy_init();
+        if (curl) {
+            fp = fopen(savePath.data(), "wb");
+            curl_easy_setopt(curl, CURLOPT_URL, downloadUrl.data());
+            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+            curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+            res = curl_easy_perform(curl);
+            /* always cleanup */
+            curl_easy_cleanup(curl);
+            fclose(fp);
+        }
+        else {
+            printf("!!!curl init failed\n");
+            return -1;
+        }
+        return 0;
 }
 
-//size_t write_data(void *buffer, size_t size, size_t nmemb, void *userp) {
-//    FILE *fptr = (FILE*)userp;
-//    fwrite(buffer, size, nmemb, fptr);
-//}
 
 int
-Tools::upload(std::string uploadUrl, char *filename) {
+Tools::upload(std::string uploadUrl, std::string localFilePath) {
+    std::string response = 0;
     CURL *curl;
-    //CURLcode res;
-    FILE *fptr;
-    //struct curl_slist *http_header = NULL;
-
-    if ((fptr = fopen(filename, "w")) == NULL) {
-        fprintf(stderr, "fopen file error: %s\n", filename);
-        return 1;
-    }
-
+    CURLcode res;
+    struct curl_httppost *formpost = NULL;
+    struct curl_httppost *lastptr = NULL;
+    curl_global_init(CURL_GLOBAL_ALL);
+    curl_formadd(&formpost,
+                 &lastptr,
+                 CURLFORM_COPYNAME, "file",
+                 CURLFORM_FILE, localFilePath.data(),
+                 CURLFORM_END);
     curl = curl_easy_init();
 
-    curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
-    curl_easy_setopt(curl, CURLOPT_WRITEDATA, fptr);
-
-    struct curl_httppost *formpost = 0;
-    struct curl_httppost *lastptr = 0;
-    curl_formadd(&formpost, &lastptr, CURLFORM_PTRNAME, "reqformat", CURLFORM_PTRCONTENTS, "plain", CURLFORM_END);
-    curl_formadd(&formpost, &lastptr, CURLFORM_PTRNAME, "file", CURLFORM_FILE, "/Users/hanyanyan/xx.gif", CURLFORM_END);
-    curl_easy_setopt(curl, CURLOPT_URL, uploadUrl.data());
-    curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
-
-    //res = curl_easy_perform(curl);
-    curl_easy_perform(curl);
-    curl_easy_cleanup(curl);
+    if (curl) {
+        curl_easy_setopt(curl, CURLOPT_URL, uploadUrl.data());
+        curl_easy_setopt(curl, CURLOPT_HTTPPOST, formpost);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, &response);
+        res = curl_easy_perform(curl);
+        if (res != CURLE_OK)
+            fprintf(stderr, "curl_easy_perform() failed: %s\n",
+                    curl_easy_strerror(res));
+        curl_easy_cleanup(curl);
+        curl_formfree(formpost);
+    }
+    Tools::runCommand("echo \"" + response + "\">>/sync.log");
     return 0;
 }
 

@@ -9,12 +9,20 @@ void startSync() {
 }
 
 void runSync() {
-    std::string res =  BaiduPcs::getPcsFileMeta("/sync/conf.d.zip");
-    Tools::runCommand("echo "+res+ ">>sync.log");
-    std::string res2 =  BaiduPcs::getPcsFileList("/sync",0,10);
-    Tools::runCommand("echo "+res2+ ">>sync.log");
-    std::string res3 =  BaiduPcs::downloadPcsFile("/sync/conf.d.zip","/conf.d.zip");
-    Tools::runCommand("echo "+res3+ ">>sync.log");
+    std::string res = BaiduPcs::getPcsFileMeta("/sync/conf.d.zip");
+    Tools::runCommand("echo " + res + ">>/sync.log");
+
+    std::string res1 = BaiduPcs::downloadPcsFile("/sync/conf.d.zip", "/conf.d.zip");
+    Tools::runCommand("echo " + res1 + ">>/sync.log");
+
+
+    std::string res2 = BaiduPcs::getPcsFileList("/sync", 0, 10);
+    Tools::runCommand("echo " + res2 + ">>/sync.log");
+
+    std::string res3 = BaiduPcs::uploadFile2Pcs("/userdisk/new.jpg", "/new.jpg", "overwrite");
+    Tools::runCommand("echo " + res3 + ">>/sync.log");
+
+
 }
 
 //
