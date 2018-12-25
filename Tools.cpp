@@ -1,13 +1,4 @@
 #include "Tools.h"
-#include <string>
-#include "PluginTools.h"
-#include "json/json.h"
-#include "JSON.h"
-#include <iostream>
-
-using router::PluginTools;
-using std::string;
-using namespace std;
 
 std::string
 Tools::runCommand(std::string command) {
@@ -133,26 +124,25 @@ size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
 int
 Tools::download(std::string downloadUrl, std::string savePath) {
 
-        CURL *curl;
-        FILE *fp;
-        CURLcode res;
+    CURL *curl;
+    FILE *fp;
+    CURLcode res;
 
-        curl = curl_easy_init();
-        if (curl) {
-            fp = fopen(savePath.data(), "wb");
-            curl_easy_setopt(curl, CURLOPT_URL, downloadUrl.data());
-            curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
-            curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
-            res = curl_easy_perform(curl);
-            /* always cleanup */
-            curl_easy_cleanup(curl);
-            fclose(fp);
-        }
-        else {
-            printf("!!!curl init failed\n");
-            return -1;
-        }
-        return 0;
+    curl = curl_easy_init();
+    if (curl) {
+        fp = fopen(savePath.data(), "wb");
+        curl_easy_setopt(curl, CURLOPT_URL, downloadUrl.data());
+        curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
+        curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
+        res = curl_easy_perform(curl);
+        /* always cleanup */
+        curl_easy_cleanup(curl);
+        fclose(fp);
+    } else {
+        printf("!!!curl init failed\n");
+        return -1;
+    }
+    return 0;
 }
 
 
@@ -236,6 +226,119 @@ std::string Tools::urlDecode(const std::string &str) {
     return strTemp;
 }
 
+void Tools::log(std::string logStr) {
+    time_t t = time(0);
+    char dateTime[64];
+    char dateTime2[64];
+    strftime(dateTime, sizeof(dateTime), "%Y-%m-%d %H:%M:%S : ", localtime(&t));
+    strftime(dateTime2, sizeof(dateTime2), "%Y-%m-%d", localtime(&t));
+    std::string dateFormat = dateTime;
+    std::string logPath = dateTime2;
+    Tools::runCommand("mkdir -p /logs");
+    Tools::runCommand("echo \"" + dateFormat + logStr + "\">>/logs/" + logPath + ".log");
+}
+
+#define N 6
+
+void Tools::fileSplit(std::string filePath)
+{
+    string filename = filePath.substr(filePath.find_last_of('/') + 1);//获取文件后缀
+    string fileDir = filePath.substr(0,filePath.find_last_of('/') - 1);//获取文件后缀
+
+    FILE *fsrc = fopen(filePath.data(), "rb");  // 源文件
+    std::string divName = filePath+"_div.txt";
+    FILE *div = fopen(divName.data(),"w");  // 存入分割条目的信息
+
+    if (fsrc == NULL || div == NULL)
+    {
+        perror("打开错误：");
+        return;
+    }
+    fseek(fsrc, 0, SEEK_END);
+    int fLen = ftell(fsrc);  // 文件长度
+    //printf("文件长度：%d\n", fLen);
+    int blockLen = fLen / N;   // 每一块的长度
+    //printf("blockLen:%d\n", blockLen);
+    FILE *ftmp;  // 临时文件，
+    for (int i = 0; i < N; i++)  // 按块分割
+    {
+        char tName[20];
+        char tdir[60] = "/";
+        sprintf(tName, "%s%d.tmp", filename.data(),i+1);//生成文件名
+        strcat(tdir, tName);  //产生临时目录
+        //printf("%s\n", tdir);
+        ftmp = fopen(tdir, "wb");  // 生成临时文件
+        if (ftmp == NULL)
+        {
+            perror("产生文件出错：");
+            break;
+        }
+        fputs(tdir, div); // 写入文件名
+        fputc('\n',div);
+
+        int offset = i*blockLen; //计算偏移量
+        fseek(fsrc, offset, SEEK_SET);
+        int count = 0;  //统计写入ftmp的数量
+        if (i == N - 1) blockLen = fLen - blockLen*(N - 1);  //最后一块的长度
+        while (count<blockLen && !feof(fsrc))
+        {
+
+            fputc(fgetc(fsrc),ftmp);
+            count++;
+        }
+        printf("count:%d\n", count);
+        fclose(ftmp);
+    }
+
+    fclose(fsrc);
+    fclose(div);
+
+}
+
+void Tools::fileMerge(std::string filePath) {
 
 
+    FILE *fdest = fopen(filePath.data(), "wb"); //合并生成的文件
+    std::string divName = filePath+"_div.txt";
+    FILE *div = fopen(divName.data(), "r");  // 读取已分割部分的目录
+    if ( fdest == NULL || div == NULL)
+    {
+        perror("打开文件出错");
+        return;
+    }
+
+    char tempName[60];
+    FILE *tempFile;
+    // 循环读出temp文件路径，并进行文件的合并
+    while (fgets(tempName, 60, div)) // fgets读取到字符串时返回非0，否则返回0
+    {
+
+        tempName[strlen(tempName)-1] = '\0'; // 去掉最后一个\n
+        tempFile = fopen(tempName, "rb");
+        if (tempFile == NULL)
+        {
+            //printf("打开文件%s失败,", tempName);
+            perror("出错原因");
+            return;
+        }
+
+
+        //printf("正在合并%s到新文件\n",tempName);
+        // 修正后的代码
+        int ch = fgetc(tempFile);//在用feof前先读取一个字符
+
+        //判断你上面读取的ch是否为结束符，feof在读取到EOF才会返回1，
+        //即若ch为EOF，则while循环不会进入，而当ch为EOF的前一次读取时，while循环仍会继续。
+        while (!feof(tempFile))
+        {
+            fputc(ch, fdest); //写入字符
+            ch = fgetc(tempFile);//读取下一个字符 如果是EOF,那么进入下一次循环前就会停止
+        }
+
+        fclose(tempFile);
+    }
+    fclose(fdest);
+    fclose(div);
+
+}
 

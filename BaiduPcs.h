@@ -17,14 +17,18 @@ class BaiduPcs {
 
 public:
     static std::string getPcsQuota();
-    static std::string getPcsFileMeta(std::string path);
+    static std::string mkdir(std::string pcsPath);
+    static std::string getPcsFileMeta(std::string pcsPath);
     static std::string getPcsFileList(std::string pcsPath,int start,int end);
-    static std::string mUpload2Pcs(std::string pcsPath,std::string limit1,std::string limit2);
     static std::string uploadFile2Pcs(std::string localFilePath,std::string pcsFilePath,std::string type);
+    static std::string movePcsFile(std::string pcsFromPath,std::string pcsToPath);
+
+    static std::string mUpload2Pcs(std::string pcsPath,std::string limit1,std::string limit2);
+
     static std::string rapidUploadFile2Pcs(std::string pcsPath,std::string limit1,std::string limit2);
     static std::string downloadPcsFile(std::string pcsFilePath, std::string localFilePath);
     static std::string deletePcsFile(std::string pcsPath,std::string limit1,std::string limit2);
-    static std::string movePcsFile(std::string pcsPath,std::string limit1,std::string limit2);
+
     static std::string checkPcsPath(std::string pcsPath,std::string limit1,std::string limit2);
     static std::string checkAndCreatePCSdir(std::string pcsPath,std::string limit1,std::string limit2);
 };

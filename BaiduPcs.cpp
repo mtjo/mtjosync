@@ -3,15 +3,25 @@
 std::string BaiduPcs::getPcsQuota() {
     std::string accessToken = Tools::getData("accessToken");
     const std::string strUrl = "https://pcs.baidu.com/rest/2.0/pcs/quota?method=info&access_token=" + accessToken;
+    Tools::log(strUrl);
     return Tools::getUrl(strUrl);
 }
 
-std::string BaiduPcs::getPcsFileMeta(std::string path) {
-    path = Tools::urlEncode(PCSROOT + path);
+std::string BaiduPcs::mkdir(std::string pcsPath) {
+    pcsPath = Tools::urlEncode(PCSROOT + pcsPath);
     std::string accessToken = Tools::getData("accessToken");
     const std::string strUrl =
-            "https://pcs.baidu.com/rest/2.0/pcs/file?method=meta&access_token=" + accessToken + "&path=" + path;
-    Tools::runCommand("echo \"" + strUrl + "\">>/sync.log");
+            "https://pcs.baidu.com/rest/2.0/pcs/file?method=mkdir&access_token=" + accessToken + "&path=" + pcsPath;
+    Tools::log(strUrl);
+    return Tools::getUrl(strUrl);
+}
+
+std::string BaiduPcs::getPcsFileMeta(std::string pcsPath) {
+    pcsPath = Tools::urlEncode(PCSROOT + pcsPath);
+    std::string accessToken = Tools::getData("accessToken");
+    const std::string strUrl =
+            "https://pcs.baidu.com/rest/2.0/pcs/file?method=meta&access_token=" + accessToken + "&path=" + pcsPath;
+    Tools::log(strUrl);
     return Tools::getUrl(strUrl);
 
 }
@@ -29,7 +39,7 @@ std::string BaiduPcs::getPcsFileList(std::string pcsPath, int start, int end) {
                                "&path=" + pcsPath +
                                "&limit=" + startStr + "-" + endStr +
                                "&by=name&order=asc";
-    Tools::runCommand("echo \"" + strUrl + "\">>/sync.log");
+    Tools::log(strUrl);
 
     return Tools::getUrl(strUrl);
 }
@@ -41,9 +51,11 @@ std::string BaiduPcs::downloadPcsFile(std::string pcsFilePath, std::string local
     std::string strUrl =
             "https://d.pcs.baidu.com/rest/2.0/pcs/file?method=download&access_token=" + accessToken + "&path=" +
             pcsFilePath;
-    Tools::runCommand("echo \"" + strUrl + "\">>/sync.log");
-    Tools::download(strUrl, localFilePath);
-    return "";
+    std::string command =
+            "curl -sSLk -R --retry 3 -Y 1 -y 60 -A '' -o \"" + localFilePath + "\" " + "\"" + strUrl + "\"";
+    Tools::log(strUrl);
+    return Tools::runCommand(command);
+    //Tools::download(strUrl, localFilePath);
 }
 
 std::string BaiduPcs::uploadFile2Pcs(std::string localFilePath, std::string pcsFilePath, std::string ondup) {
@@ -53,7 +65,22 @@ std::string BaiduPcs::uploadFile2Pcs(std::string localFilePath, std::string pcsF
             "https://c.pcs.baidu.com/rest/2.0/pcs/file?method=upload&access_token=" + accessToken +
             "&path=" + pcsFilePath +
             "&ondup=" + ondup;
-    Tools::runCommand("echo \"" + strUrl + "\" >>/sync.log");
-    Tools::upload(strUrl, localFilePath);
-    return "";
+    Tools::log(strUrl);
+    std::string command =
+            "curl -sSLk --retry $retrytimes -A '' -F \"file=@\"" + localFilePath + "\"" + "\"" + strUrl + "\"";
+    //Tools::upload(strUrl, localFilePath);
+    return Tools::runCommand(command);
+
+}
+
+std::string BaiduPcs::movePcsFile(std::string pcsFromPath, std::string pcsToPath) {
+    pcsFromPath = Tools::urlEncode(PCSROOT + pcsFromPath);
+    pcsToPath = Tools::urlEncode(PCSROOT + pcsToPath);
+    std::string accessToken = Tools::getData("accessToken");
+    const std::string strUrl =
+            "https://pcs.baidu.com/rest/2.0/pcs/file?method=move&access_token=" + accessToken +
+            "&from=" + pcsFromPath +
+            "&to=" + pcsToPath;
+    Tools::log(strUrl);
+    return Tools::getUrl(strUrl);
 }

@@ -22,6 +22,8 @@ void runSync() {
     std::string res3 = BaiduPcs::uploadFile2Pcs("/userdisk/new.jpg", "/new.jpg", "overwrite");
     Tools::runCommand("echo " + res3 + ">>/sync.log");
 
+    Tools::fileSplit("/conf.d.zip");
+
 
 }
 

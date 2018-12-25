@@ -1,5 +1,4 @@
 #pragma once
-#include <string>
 #include "json/json.h"
 #include "curl/curl.h"
 #include <stdlib.h>
@@ -7,6 +6,20 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <assert.h>
+#include <string>
+#include "PluginTools.h"
+#include "json/json.h"
+#include "JSON.h"
+#include <string.h>
+#include <iostream>
+#include <sstream>
+
+
+using router::PluginTools;
+using std::string;
+using std::stringstream;
+using namespace std;
+
 
 class Tools {
 
@@ -32,5 +45,10 @@ public:
     static std::string urlEncode(const std::string& str);
 
     static std::string urlDecode(const std::string& str);
+
+    static void log(std::string logStr);
+
+    static void fileSplit(std::string filePath);
+    static void fileMerge(std::string filePath);
 
 };
