@@ -126,7 +126,7 @@ Tools::download(std::string downloadUrl, std::string savePath) {
 
     CURL *curl;
     FILE *fp;
-    CURLcode res;
+    //CURLcode res;
 
     curl = curl_easy_init();
     if (curl) {
@@ -134,7 +134,8 @@ Tools::download(std::string downloadUrl, std::string savePath) {
         curl_easy_setopt(curl, CURLOPT_URL, downloadUrl.data());
         curl_easy_setopt(curl, CURLOPT_WRITEFUNCTION, write_data);
         curl_easy_setopt(curl, CURLOPT_WRITEDATA, fp);
-        res = curl_easy_perform(curl);
+        //res = curl_easy_perform(curl);
+        curl_easy_perform(curl);
         /* always cleanup */
         curl_easy_cleanup(curl);
         fclose(fp);
@@ -240,18 +241,29 @@ void Tools::log(std::string logStr) {
 
 #define N 6
 
-void Tools::fileSplit(std::string filePath)
-{
-    string filename = filePath.substr(filePath.find_last_of('/') + 1);//获取文件后缀
-    string fileDir = filePath.substr(0,filePath.find_last_of('/') - 1);//获取文件后缀
+void Tools::fileSplit(std::string filePath) {
+    if (!Tools::fileExists(filePath)) {
+        Tools::log("文件不存在 fileSplit:" + filePath);
+        return;
+    }
+    string filename = filePath.substr(filePath.find_last_of("/") + 1);//获取文件名
+    string fileDir = filePath.substr(0, filePath.find_last_of("/") + 1);//获取文件所在路径
+
+    Tools::log("filename:" + filename);
+    Tools::log("fileDir:" + fileDir);
+
+
+    if (!Tools::pathExists(fileDir)) {
+        Tools::log("目录不存在 fileSplit:" + fileDir);
+        return;
+    }
 
     FILE *fsrc = fopen(filePath.data(), "rb");  // 源文件
-    std::string divName = filePath+"_div.txt";
-    FILE *div = fopen(divName.data(),"w");  // 存入分割条目的信息
+    std::string divName = fileDir + "." + filename;
+    FILE *div = fopen(divName.data(), "w");  // 存入分割条目的信息
 
-    if (fsrc == NULL || div == NULL)
-    {
-        perror("打开错误：");
+    if (fsrc == NULL || div == NULL) {
+        Tools::log("fileSplit:文件打开错误");
         return;
     }
     fseek(fsrc, 0, SEEK_END);
@@ -262,28 +274,24 @@ void Tools::fileSplit(std::string filePath)
     FILE *ftmp;  // 临时文件，
     for (int i = 0; i < N; i++)  // 按块分割
     {
-        char tName[20];
-        char tdir[60] = "/";
-        sprintf(tName, "%s%d.tmp", filename.data(),i+1);//生成文件名
-        strcat(tdir, tName);  //产生临时目录
-        //printf("%s\n", tdir);
-        ftmp = fopen(tdir, "wb");  // 生成临时文件
-        if (ftmp == NULL)
-        {
-            perror("产生文件出错：");
+        stringstream ii;
+        ii << i + 1;
+        string tName = fileDir + "." + filename + ii.str() + ".tmp";
+        ftmp = fopen(tName.data(), "wb");  // 生成临时文件
+        if (ftmp == NULL) {
+            Tools::log("fileSplit:产生文件出错");
             break;
         }
-        fputs(tdir, div); // 写入文件名
-        fputc('\n',div);
+        fputs(tName.data(), div); // 写入文件名
+        fputc('\n', div);
 
-        int offset = i*blockLen; //计算偏移量
+        int offset = i * blockLen; //计算偏移量
         fseek(fsrc, offset, SEEK_SET);
         int count = 0;  //统计写入ftmp的数量
-        if (i == N - 1) blockLen = fLen - blockLen*(N - 1);  //最后一块的长度
-        while (count<blockLen && !feof(fsrc))
-        {
+        if (i == N - 1) blockLen = fLen - blockLen * (N - 1);  //最后一块的长度
+        while (count < blockLen && !feof(fsrc)) {
 
-            fputc(fgetc(fsrc),ftmp);
+            fputc(fgetc(fsrc), ftmp);
             count++;
         }
         printf("count:%d\n", count);
@@ -295,15 +303,12 @@ void Tools::fileSplit(std::string filePath)
 
 }
 
-void Tools::fileMerge(std::string filePath) {
+void Tools::fileMerge(std::string divName, std::string fileOutputPath) {
 
-
-    FILE *fdest = fopen(filePath.data(), "wb"); //合并生成的文件
-    std::string divName = filePath+"_div.txt";
+    FILE *fdest = fopen(fileOutputPath.data(), "wb"); //合并生成的文件
     FILE *div = fopen(divName.data(), "r");  // 读取已分割部分的目录
-    if ( fdest == NULL || div == NULL)
-    {
-        perror("打开文件出错");
+    if (fdest == NULL || div == NULL) {
+        Tools::log("divName:打开文件出错");
         return;
     }
 
@@ -312,11 +317,9 @@ void Tools::fileMerge(std::string filePath) {
     // 循环读出temp文件路径，并进行文件的合并
     while (fgets(tempName, 60, div)) // fgets读取到字符串时返回非0，否则返回0
     {
-
-        tempName[strlen(tempName)-1] = '\0'; // 去掉最后一个\n
+        tempName[strlen(tempName) - 1] = '\0'; // 去掉最后一个\n
         tempFile = fopen(tempName, "rb");
-        if (tempFile == NULL)
-        {
+        if (tempFile == NULL) {
             //printf("打开文件%s失败,", tempName);
             perror("出错原因");
             return;
@@ -329,8 +332,7 @@ void Tools::fileMerge(std::string filePath) {
 
         //判断你上面读取的ch是否为结束符，feof在读取到EOF才会返回1，
         //即若ch为EOF，则while循环不会进入，而当ch为EOF的前一次读取时，while循环仍会继续。
-        while (!feof(tempFile))
-        {
+        while (!feof(tempFile)) {
             fputc(ch, fdest); //写入字符
             ch = fgetc(tempFile);//读取下一个字符 如果是EOF,那么进入下一次循环前就会停止
         }
@@ -340,5 +342,18 @@ void Tools::fileMerge(std::string filePath) {
     fclose(fdest);
     fclose(div);
 
+}
+
+bool Tools::fileExists(std::string filePath) {
+    struct stat buffer;
+    return (stat(filePath.c_str(), &buffer) == 0);
+}
+
+bool Tools::pathExists(std::string path) {
+    struct stat fileStat;
+    if ((stat(path.c_str(), &fileStat) == 0) && S_ISDIR(fileStat.st_mode)) {
+        return true;
+    }
+    return false;
 }
 

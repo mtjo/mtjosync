@@ -23,7 +23,10 @@ void runSync() {
     Tools::runCommand("echo " + res3 + ">>/sync.log");
 
     Tools::fileSplit("/conf.d.zip");
+    Tools::fileSplit("/userdata/共享/Pacifist355.dmg");
 
+    Tools::fileMerge("/.conf.d.zip","/conf.d_new.zip");
+    Tools::fileMerge("/userdata/共享/.Pacifist355.dmg","/userdata/共享/Pacifist355-new.dmg");
 
 }
 

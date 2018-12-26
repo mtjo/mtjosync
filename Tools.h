@@ -14,7 +14,6 @@
 #include <iostream>
 #include <sstream>
 
-
 using router::PluginTools;
 using std::string;
 using std::stringstream;
@@ -49,6 +48,11 @@ public:
     static void log(std::string logStr);
 
     static void fileSplit(std::string filePath);
-    static void fileMerge(std::string filePath);
+
+    static void fileMerge(std::string divName, std::string fileOutputPath);
+
+    static bool fileExists(std::string filePath);
+
+    static bool pathExists(std::string path);
 
 };
