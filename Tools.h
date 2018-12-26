@@ -18,41 +18,41 @@ using router::PluginTools;
 using std::string;
 using std::stringstream;
 using namespace std;
-
+#define MIN_PIECES 2
 
 class Tools {
 
 public:
-    static std::string runCommand(std::string command);
+    static string runCommand(string command);
 
-    static int saveData(std::string key, std::string value);
+    static int saveData(string key, string value);
 
-    static std::string getData(std::string key);
+    static string getData(string key);
 
-    static std::string getParams(const std::string params);
+    static string getParams(const string params);
 
-    static std::string getParamsByKey(const std::string params, std::string key);
+    static string getParamsByKey(const string params, string key);
 
-    static std::string getUrl(const std::string url);
+    static string getUrl(const string url);
 
-    static std::string postUrl(const std::string url, const std::string postData);
+    static string postUrl(const string url, const string postData);
 
-    static int download(std::string downloadUrl, std::string savePath);
+    static int download(string downloadUrl, string savePath);
 
-    static int upload(std::string uploadUrl, std::string localFilePath);
+    static int upload(string uploadUrl, string localFilePath);
 
-    static std::string urlEncode(const std::string& str);
+    static string urlEncode(const string& str);
 
-    static std::string urlDecode(const std::string& str);
+    static string urlDecode(const string& str);
 
-    static void log(std::string logStr);
+    static void log(string logStr);
 
-    static void fileSplit(std::string filePath);
+    static void fileSplit(string filePath, int pieces);
 
-    static void fileMerge(std::string divName, std::string fileOutputPath);
+    static void fileMerge(string divName, string fileOutputPath);
 
-    static bool fileExists(std::string filePath);
+    static bool fileExists(string filePath);
 
-    static bool pathExists(std::string path);
+    static bool pathExists(string path);
 
 };

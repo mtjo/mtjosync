@@ -1,30 +1,30 @@
 #include "Tools.h"
 
-std::string
-Tools::runCommand(std::string command) {
-    std::string output = "";
+string
+Tools::runCommand(string command) {
+    string output = "";
     router::PluginTools::sCallSystem(command, output);
     return output;
 }
 
 int
-Tools::saveData(const std::string key, const std::string value) {
+Tools::saveData(const string key, const string value) {
     return router::PluginTools::saveData(key, value);
 }
 
-std::string
-Tools::getData(std::string key) {
-    std::string value = "";
+string
+Tools::getData(string key) {
+    string value = "";
     router::PluginTools::getData(key, value);
     return value;
 }
 
-std::string
-Tools::getParams(const std::string params) {
+string
+Tools::getParams(const string params) {
     const char *ch = params.data();
     struct json_object *jsonObject = NULL;
     jsonObject = json_tokener_parse(ch);
-    std::string data = "";
+    string data = "";
     if ((long) jsonObject > 0) {/**Json格式无错误**/
         jsonObject = json_object_object_get(jsonObject, "data");
         data = json_object_get_string(jsonObject);
@@ -33,12 +33,12 @@ Tools::getParams(const std::string params) {
     return data;
 }
 
-std::string
-Tools::getParamsByKey(const std::string params, std::string key) {
+string
+Tools::getParamsByKey(const string params, string key) {
     const char *ch = params.data();
     struct json_object *jsonObject = NULL;
     jsonObject = json_tokener_parse(ch);
-    std::string data = "";
+    string data = "";
     if ((long) jsonObject > 0) {/**Json格式无错误**/
         jsonObject = json_object_object_get(jsonObject, key.data());
         data = json_object_get_string(jsonObject);
@@ -55,9 +55,9 @@ size_t req_reply(void *ptr, size_t size, size_t nmemb, void *stream) {
     return size * nmemb;
 }
 
-std::string
-Tools::getUrl(const std::string url) {
-    std::string response;
+string
+Tools::getUrl(const string url) {
+    string response;
     // init curl
     CURL *curl = curl_easy_init();
     // res code
@@ -84,9 +84,9 @@ Tools::getUrl(const std::string url) {
     return response;
 }
 
-std::string
-Tools::postUrl(const std::string url, const std::string postParams) {
-    std::string response = 0;
+string
+Tools::postUrl(const string url, const string postParams) {
+    string response = 0;
 
     // init curl
     CURL *curl = curl_easy_init();
@@ -122,7 +122,7 @@ size_t write_data(void *ptr, size_t size, size_t nmemb, FILE *stream) {
 }
 
 int
-Tools::download(std::string downloadUrl, std::string savePath) {
+Tools::download(string downloadUrl, string savePath) {
 
     CURL *curl;
     FILE *fp;
@@ -148,8 +148,8 @@ Tools::download(std::string downloadUrl, std::string savePath) {
 
 
 int
-Tools::upload(std::string uploadUrl, std::string localFilePath) {
-    std::string response = 0;
+Tools::upload(string uploadUrl, string localFilePath) {
+    string response = 0;
     CURL *curl;
     CURLcode res;
     struct curl_httppost *formpost = NULL;
@@ -191,8 +191,8 @@ unsigned char FromHex(unsigned char x) {
     return y;
 }
 
-std::string Tools::urlEncode(const std::string &str) {
-    std::string strTemp = "";
+string Tools::urlEncode(const string &str) {
+    string strTemp = "";
     size_t length = str.length();
     for (size_t i = 0; i < length; i++) {
         if (isalnum((unsigned char) str[i]) ||
@@ -212,8 +212,8 @@ std::string Tools::urlEncode(const std::string &str) {
     return strTemp;
 }
 
-std::string Tools::urlDecode(const std::string &str) {
-    std::string strTemp = "";
+string Tools::urlDecode(const string &str) {
+    string strTemp = "";
     size_t length = str.length();
     for (size_t i = 0; i < length; i++) {
         if (str[i] == '+') strTemp += ' ';
@@ -227,21 +227,21 @@ std::string Tools::urlDecode(const std::string &str) {
     return strTemp;
 }
 
-void Tools::log(std::string logStr) {
+void Tools::log(string logStr) {
     time_t t = time(0);
     char dateTime[64];
     char dateTime2[64];
     strftime(dateTime, sizeof(dateTime), "%Y-%m-%d %H:%M:%S : ", localtime(&t));
     strftime(dateTime2, sizeof(dateTime2), "%Y-%m-%d", localtime(&t));
-    std::string dateFormat = dateTime;
-    std::string logPath = dateTime2;
+    string dateFormat = dateTime;
+    string logPath = dateTime2;
     Tools::runCommand("mkdir -p /logs");
     Tools::runCommand("echo \"" + dateFormat + logStr + "\">>/logs/" + logPath + ".log");
 }
 
-#define N 6
 
-void Tools::fileSplit(std::string filePath) {
+
+void Tools::fileSplit(string filePath,int pieces) {
     if (!Tools::fileExists(filePath)) {
         Tools::log("文件不存在 fileSplit:" + filePath);
         return;
@@ -258,8 +258,9 @@ void Tools::fileSplit(std::string filePath) {
         return;
     }
 
+    pieces = pieces>MIN_PIECES?pieces:MIN_PIECES;
     FILE *fsrc = fopen(filePath.data(), "rb");  // 源文件
-    std::string divName = fileDir + "." + filename;
+    string divName = fileDir + "." + filename;
     FILE *div = fopen(divName.data(), "w");  // 存入分割条目的信息
 
     if (fsrc == NULL || div == NULL) {
@@ -269,10 +270,10 @@ void Tools::fileSplit(std::string filePath) {
     fseek(fsrc, 0, SEEK_END);
     int fLen = ftell(fsrc);  // 文件长度
     //printf("文件长度：%d\n", fLen);
-    int blockLen = fLen / N;   // 每一块的长度
+    int blockLen = fLen / pieces;   // 每一块的长度
     //printf("blockLen:%d\n", blockLen);
     FILE *ftmp;  // 临时文件，
-    for (int i = 0; i < N; i++)  // 按块分割
+    for (int i = 0; i < pieces; i++)  // 按块分割
     {
         stringstream ii;
         ii << i + 1;
@@ -288,7 +289,7 @@ void Tools::fileSplit(std::string filePath) {
         int offset = i * blockLen; //计算偏移量
         fseek(fsrc, offset, SEEK_SET);
         int count = 0;  //统计写入ftmp的数量
-        if (i == N - 1) blockLen = fLen - blockLen * (N - 1);  //最后一块的长度
+        if (i == pieces - 1) blockLen = fLen - blockLen * (pieces - 1);  //最后一块的长度
         while (count < blockLen && !feof(fsrc)) {
 
             fputc(fgetc(fsrc), ftmp);
@@ -303,7 +304,7 @@ void Tools::fileSplit(std::string filePath) {
 
 }
 
-void Tools::fileMerge(std::string divName, std::string fileOutputPath) {
+void Tools::fileMerge(string divName, string fileOutputPath) {
 
     FILE *fdest = fopen(fileOutputPath.data(), "wb"); //合并生成的文件
     FILE *div = fopen(divName.data(), "r");  // 读取已分割部分的目录
@@ -344,12 +345,12 @@ void Tools::fileMerge(std::string divName, std::string fileOutputPath) {
 
 }
 
-bool Tools::fileExists(std::string filePath) {
+bool Tools::fileExists(string filePath) {
     struct stat buffer;
     return (stat(filePath.c_str(), &buffer) == 0);
 }
 
-bool Tools::pathExists(std::string path) {
+bool Tools::pathExists(string path) {
     struct stat fileStat;
     if ((stat(path.c_str(), &fileStat) == 0) && S_ISDIR(fileStat.st_mode)) {
         return true;

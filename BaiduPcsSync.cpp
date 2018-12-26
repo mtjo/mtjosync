@@ -22,11 +22,13 @@ void runSync() {
     std::string res3 = BaiduPcs::uploadFile2Pcs("/userdisk/new.jpg", "/new.jpg", "overwrite");
     Tools::runCommand("echo " + res3 + ">>/sync.log");
 
-    Tools::fileSplit("/conf.d.zip");
-    Tools::fileSplit("/userdata/共享/Pacifist355.dmg");
+    Tools::fileSplit("/conf.d.zip", 6);
+    Tools::fileSplit("/userdata/共享/Pacifist355.dmg", 10);
 
-    Tools::fileMerge("/.conf.d.zip","/conf.d_new.zip");
-    Tools::fileMerge("/userdata/共享/.Pacifist355.dmg","/userdata/共享/Pacifist355-new.dmg");
+    //Tools::fileSplit("/userdata/共享/cn_windows_8.1_with_update_x64_dvd_4048046.iso", 10);
+
+    Tools::fileMerge("/.conf.d.zip", "/conf.d_new.zip");
+    Tools::fileMerge("/userdata/共享/.Pacifist355.dmg", "/userdata/共享/Pacifist355-new.dmg");
 
 }
 
