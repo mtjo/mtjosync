@@ -8,9 +8,12 @@
 #include <sys/stat.h>
 #include "Tools.h"
 #include <sstream>
+#include "json/json.h"
+
 
 using std::string;
 using std::stringstream;
+using namespace std;
 
 #define PCSROOT "/apps/mtjo"
 class BaiduPcs {
@@ -27,6 +30,7 @@ public:
 
     static std::string rapidUploadFile2Pcs(std::string pcsPath,std::string limit1,std::string limit2);
     static std::string downloadPcsFile(std::string pcsFilePath, std::string localFilePath);
+    static std::string burstDownloadPcsFile(std::string pcsFilePath, std::string localFilePath,int treadCount);
     static std::string deletePcsFile(std::string pcsPath,std::string limit1,std::string limit2);
 
     static std::string checkPcsPath(std::string pcsPath,std::string limit1,std::string limit2);

@@ -3,32 +3,28 @@
 
 BaiduPcsSync::BaiduPcsSync() {
 }
-
 void startSync() {
     Tools::runCommand("pcsSync >> /sync.log");
 }
 
 void runSync() {
-    std::string res = BaiduPcs::getPcsFileMeta("/sync/conf.d.zip");
-    Tools::runCommand("echo " + res + ">>/sync.log");
+//    std::string res = BaiduPcs::getPcsFileMeta("/sync/conf.d.zip");
+//    std::string res1 = BaiduPcs::downloadPcsFile("/sync/conf.d.zip", "/conf.d.zip");
+//    std::string res2 = BaiduPcs::getPcsFileList("/sync", 0, 10);
+//    std::string res3 = BaiduPcs::uploadFile2Pcs("/userdisk/new.jpg", "/new.jpg", "overwrite");
 
-    std::string res1 = BaiduPcs::downloadPcsFile("/sync/conf.d.zip", "/conf.d.zip");
-    Tools::runCommand("echo " + res1 + ">>/sync.log");
+//    Tools::fileSplit("/conf.d.zip", 6);
+//
+//    Tools::fileSplit("/userdata/共享/Pacifist355.dmg", 10);
+//
+//    Tools::fileSplit("/userdata/软件/Untitled-1.dmg", 10);
+//
+//    Tools::fileSplit("/userdata/软件/Microsoft_Office_2016_15.41.17120500_Installer.pkg", 10);
+//
+//    Tools::fileMerge("/.conf.d.zip", "/conf.d_new.zip");
+//    Tools::fileMerge("/userdata/共享/.Pacifist355.dmg", "/userdata/共享/Pacifist355-new.dmg");
 
-
-    std::string res2 = BaiduPcs::getPcsFileList("/sync", 0, 10);
-    Tools::runCommand("echo " + res2 + ">>/sync.log");
-
-    std::string res3 = BaiduPcs::uploadFile2Pcs("/userdisk/new.jpg", "/new.jpg", "overwrite");
-    Tools::runCommand("echo " + res3 + ">>/sync.log");
-
-    Tools::fileSplit("/conf.d.zip", 6);
-    Tools::fileSplit("/userdata/共享/Pacifist355.dmg", 10);
-
-    //Tools::fileSplit("/userdata/共享/cn_windows_8.1_with_update_x64_dvd_4048046.iso", 10);
-
-    Tools::fileMerge("/.conf.d.zip", "/conf.d_new.zip");
-    Tools::fileMerge("/userdata/共享/.Pacifist355.dmg", "/userdata/共享/Pacifist355-new.dmg");
+    BaiduPcs::burstDownloadPcsFile("/sync/conf.d.zip", "/conf.d.zip",5);
 
 }
 
