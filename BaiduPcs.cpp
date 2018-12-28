@@ -58,8 +58,10 @@ string BaiduPcs::downloadPcsFile(string pcsFilePath, string localFilePath) {
     //Tools::download(strUrl, localFilePath);
 }
 
+//多线程分片下载
 string BaiduPcs::burstDownloadPcsFile(string pcsFilePath, string localFilePath, int treadCount) {
-    string pcsFileMeta = BaiduPcs::getPcsFileMeta(pcsFilePath);
+    string pcsFileMeta = BaiduPcs::getPcsFileMeta(pcsFilePath + "22");
+    Tools::log("pcsFileMeta: " + pcsFileMeta);
     struct json_object *jsonObject = json_tokener_parse(pcsFileMeta.data());
     Tools::log(json_object_get_string(jsonObject));
     if ((long) jsonObject > 0) {/**Json格式无错误**/
@@ -73,14 +75,34 @@ string BaiduPcs::burstDownloadPcsFile(string pcsFilePath, string localFilePath, 
             Tools::log(json_object_get_string(jsonObject));
             jsonObject = json_object_object_get(jsonObject, "size");
             int size = json_object_get_int(jsonObject);
-            char maxint[100] ;
-            int s=32767;
-            sprintf( maxint, "maxint:%d, size:%d",s, size);
+            char maxint[100];
+            sprintf(maxint, " size: %d", size);
             Tools::log(maxint);
         }
 
     }
     json_object_put(jsonObject);
+
+    FILE *fsrc = fopen("/userdata/软件/Untitled-1.dmg", "rb");
+
+    if (fsrc == NULL) {
+        Tools::log("fsrc:文件打开错误");
+    }
+
+    FILE *fsrc2 = fopen("/userdata/软件/Microsoft_Office_2016_15.41.17120500_Installer.pkg", "rb");
+
+    if (fsrc2 == NULL) {
+        Tools::log("fsrc2:文件打开错误");
+    }
+
+    FILE *fsrc3 = fopen("/userdata/共享/cn_windows_8.1_with_update_x64_dvd_4048046.iso", "rb");
+
+    if (fsrc3 == NULL) {
+        Tools::log("fsrc3:文件打开错误");
+    }
+
+    Tools::fileSplit("/userdata/软件/Microsoft_Office_2016_15.41.17120500_Installer.pkg",10);
+
 
     pcsFilePath = Tools::urlEncode(PCSROOT + pcsFilePath);
     string accessToken = Tools::getData("accessToken");
@@ -90,7 +112,7 @@ string BaiduPcs::burstDownloadPcsFile(string pcsFilePath, string localFilePath, 
             pcsFilePath;
     string command =
             "curl -sSLk -R --retry 3 -Y 1 -y 60 -A '' -o \"" + localFilePath + "\" " + "\"" + strUrl + "\"";
-    Tools::log(strUrl);
+    //Tools::log(strUrl);
     return Tools::runCommand(command);
     //Tools::download(strUrl, localFilePath);
 }
