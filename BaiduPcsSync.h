@@ -17,6 +17,12 @@
 #include "Tools.h"
 #include "BaiduPcs.h"
 
+#include <signal.h>
+#include <unistd.h>
+#include <string.h>
+#include <stdio.h>
+
+
 #include "MRApp.h"
 #define BUF_SIZE 256
 

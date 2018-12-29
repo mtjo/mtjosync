@@ -60,49 +60,72 @@ string BaiduPcs::downloadPcsFile(string pcsFilePath, string localFilePath) {
 
 //多线程分片下载
 string BaiduPcs::burstDownloadPcsFile(string pcsFilePath, string localFilePath, int treadCount) {
-    string pcsFileMeta = BaiduPcs::getPcsFileMeta(pcsFilePath + "22");
-    Tools::log("pcsFileMeta: " + pcsFileMeta);
+    int pieceSize = 1024 * 1024 * 10;
+    string pcsFileMeta = BaiduPcs::getPcsFileMeta(pcsFilePath);
     struct json_object *jsonObject = json_tokener_parse(pcsFileMeta.data());
     Tools::log(json_object_get_string(jsonObject));
+    int size = 0;
     if ((long) jsonObject > 0) {/**Json格式无错误**/
-        jsonObject = json_object_object_get(jsonObject, "list");
-        Tools::log(json_object_get_string(jsonObject));
-        //array_list *list = json_object_get_array(jsonObject);
-        int length = json_object_array_length(jsonObject);
-        //jsonObject = json_object_array_get_idx(list, 0);
-        if (length == 1) {
-            jsonObject = json_object_array_get_idx(jsonObject, 0);
+        if (json_object_object_get_ex(jsonObject, "list", &jsonObject)) {
             Tools::log(json_object_get_string(jsonObject));
-            jsonObject = json_object_object_get(jsonObject, "size");
-            int size = json_object_get_int(jsonObject);
-            char maxint[100];
-            sprintf(maxint, " size: %d", size);
-            Tools::log(maxint);
+            int length = json_object_array_length(jsonObject);
+            if (length == 1) {
+                jsonObject = json_object_array_get_idx(jsonObject, 0);
+                Tools::log(json_object_get_string(jsonObject));
+                jsonObject = json_object_object_get(jsonObject, "size");
+                size = json_object_get_int(jsonObject);
+                char maxint[100];
+                sprintf(maxint, "pcs file size: %d", size);
+                Tools::log(maxint);
+            }
+        } else {
+            Tools::log("PCS错误: " + pcsFileMeta);
         }
-
     }
     json_object_put(jsonObject);
 
-    FILE *fsrc = fopen("/userdata/软件/Untitled-1.dmg", "rb");
-
-    if (fsrc == NULL) {
-        Tools::log("fsrc:文件打开错误");
+    if (size == 0) {
+        Tools::log("PCS文件不存在！ ");
+        return "";
     }
+    string filename = localFilePath.substr(localFilePath.find_last_of("/") + 1);//获取文件名
+    string fileDir = localFilePath.substr(0, localFilePath.find_last_of("/") + 1);//获取文件所在路径
+    Tools::runCommand("mkdir -p " + fileDir);
+    string divName = fileDir + "." + filename;
+    //FILE *div = fopen(divName.data(), "w");  // 存入分割条目的信息
+    json_object *fileList = json_object_new_array();
 
-    FILE *fsrc2 = fopen("/userdata/软件/Microsoft_Office_2016_15.41.17120500_Installer.pkg", "rb");
+    for (int i = 0; i * pieceSize - 1 < size; i++) {
+        stringstream ii;
+        ii << i + 1;
 
-    if (fsrc2 == NULL) {
-        Tools::log("fsrc2:文件打开错误");
+        string tName = "." + filename + ii.str() + ".tmp";
+        int tSize = size;
+        char range[64];
+        int fromSize = i * pieceSize;
+        int toSize = (i + 1) * pieceSize - 1;
+        toSize = toSize > size ? size : toSize;
+
+        sprintf(range, "%d-%d", fromSize, toSize);
+        string rangeStr = range;
+        Tools::log("range:" + rangeStr);
+
+        bool tSuccess = false;
+        json_object *tFileObject = json_object_new_object();
+        json_object_object_add(tFileObject, "name", json_object_new_string(tName.data()));
+        json_object_object_add(tFileObject, "range", json_object_new_string(range));
+        json_object_object_add(tFileObject, "size", json_object_new_int64(tSize));
+        json_object_object_add(tFileObject, "success", json_object_new_boolean(tSuccess));
+
+        Tools::log(json_object_get_string(tFileObject));
+
+        json_object_array_add(fileList, json_object_get(tFileObject));
+
+        json_object_put(tFileObject);
     }
-
-    FILE *fsrc3 = fopen("/userdata/共享/cn_windows_8.1_with_update_x64_dvd_4048046.iso", "rb");
-
-    if (fsrc3 == NULL) {
-        Tools::log("fsrc3:文件打开错误");
-    }
-
-    Tools::fileSplit("/userdata/软件/Microsoft_Office_2016_15.41.17120500_Installer.pkg",10);
-
+    Tools::log(json_object_get_string(fileList));
+    json_object_to_file_ext((char *) divName.data(), fileList, 0);
+    json_object_put(fileList);
 
     pcsFilePath = Tools::urlEncode(PCSROOT + pcsFilePath);
     string accessToken = Tools::getData("accessToken");
