@@ -1,38 +1,44 @@
 #include "BaiduPcsSync.h"
 
 
-BaiduPcsSync::BaiduPcsSync() {
+struct cb_arg
+{
+    struct event *ev;
+    struct timeval tv;
+};
+
+void timeout_cb(int fd, short event, void *params)
+{
+
+    struct cb_arg *arg = (struct cb_arg*)params;
+    struct event *ev = arg->ev;
+    struct timeval tv = arg->tv;
+
+    evtimer_add(ev, &tv);
 }
 
 
-static char msg[] = "I received a msg.\n";
-int len;
-void show_msg(int signo)
-{
-    write(STDERR_FILENO, msg, len);
+
+
+BaiduPcsSync::BaiduPcsSync() {
 }
 
 
 void startSync() {
 
-    struct sigaction act;
-    union sigval tsval;
-    act.sa_handler = show_msg;
-    act.sa_flags = 0;
-    sigemptyset(&act.sa_mask);
-    sigaction(50, &act, NULL);
-    len = strlen(msg);
-    Tools::log(msg);
-    while ( 1 )
-    {
-        sleep(2); /*睡眠2秒*/
-/*向主进程发送信号，实际上是自己给自己发信号*/
-        sigqueue(getpid(), 50, tsval);
-    }
+    struct event_base *base = event_base_new();
+    struct event *timeout = NULL;
+    struct timeval tv = {1, 0};
+    struct cb_arg arg;
+
+    timeout = evtimer_new(base, timeout_cb, &arg);
+    arg.ev = timeout;
+    arg.tv = tv;
+    evtimer_add(timeout, &tv);
+    event_base_dispatch(base);
+    evtimer_del(timeout);
 
     //Tools::runCommand("pcsSync >> /sync.log");
-
-
 }
 
 void runSync() {
@@ -64,9 +70,9 @@ void killAutorun() {
 
 void
 BaiduPcsSync::onLaunched(const std::vector <std::string> &parameters) {
-//    std::thread subthread(startFrpc);
-//    subthread.detach();
-//
+    std::thread subthread(startSync);
+    subthread.detach();
+
 //    std::thread killthread(killAutorun);
 //    killthread.detach();
 

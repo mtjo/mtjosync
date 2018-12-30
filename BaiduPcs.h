@@ -16,6 +16,7 @@ using std::stringstream;
 using namespace std;
 
 #define PCSROOT "/apps/mtjo"
+#define USERDATA "/userdata"
 class BaiduPcs {
 
 public:

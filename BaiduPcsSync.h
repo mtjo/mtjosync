@@ -17,10 +17,8 @@
 #include "Tools.h"
 #include "BaiduPcs.h"
 
-#include <signal.h>
-#include <unistd.h>
-#include <string.h>
-#include <stdio.h>
+#include <iostream>
+#include <event2/event.h>
 
 
 #include "MRApp.h"
